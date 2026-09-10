@@ -1,15 +1,14 @@
 # Welcome / 欢迎讨论
 
-This is a private review space for **Faster DLSS5 for Ada / RTX 40**. We will keep
-updating optimization notes, measured results and compatibility work here. Public
-publication remains a later decision.
+Welcome to **Faster DLSS5 for Ada / RTX 40**. We will keep sharing optimization
+methods, measured results and compatibility improvements here.
 
 [中文讨论说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/.github/discussions/welcome.zh-CN.md)
 
-The current source preview contains tools and measurements, not the GPU
-acceleration payload. Its absence is intentional while redistribution rights are
-unresolved. Please do not attach vendor PTX/SASS, derived GPU binaries, runtime
-DLLs, weights, game resources or logs containing personal paths here.
+Use Discussions for ideas and questions. For installation, activation or visual
+issues, choose **Installation or game problem** in Issues. The manager can export
+a diagnostic ZIP; no benchmark is needed to ask for help. Use **Performance results**
+to share measurements, including settings and repeats.
 
 Useful discussion topics: lower-resolution efficiency, register lifetime and
 shared-memory tradeoffs, further Ada validation, temporal quality checks, and

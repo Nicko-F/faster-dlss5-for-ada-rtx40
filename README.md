@@ -9,6 +9,15 @@
 基于 [RenoDX DLSS5](https://github.com/RankFTW/rhi-repo) 的 **Ada / RTX 40 加速补丁**。保留 NVIDIA 的数学运算与数据依赖，
 针对 Ada 优化数据搬运、寄存器使用和融合内核调度。
 
+### 下载与安装
+
+**[社区 base 下载](https://github.com/RankFTW/rhi-repo/releases) · [补丁下载与安装指南](docs/downloads.zh-CN.md) · [Releases](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/releases/latest)**
+
+装好并运行社区 base 后，解压完整加速包，双击 **Start.cmd** → 选择游戏目录 → **安装／更新**。
+之后照常启动游戏，通过**检查生效状态**查看最近运行记录；遇到问题可直接**导出诊断**并**反馈问题**。
+
+当前 Release 提供源码工具包，完整加速包尚未提供下载。文件区别见[下载指南](docs/downloads.zh-CN.md)。
+
 ### 优化内容
 
 - **异步搬运**：恢复计算与拷贝的重叠，减少不必要的等待。
@@ -40,12 +49,6 @@ RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 新增帧成本按开启/关闭 DLSS5 的整帧时间差估算。
 5070 Ti 参考来自 [TechSpot 的《NBA 2K27》测试](https://www.techspot.com/article/3170-real-dlss-5-performance/)，游戏与接入不同。
 
-### 安装使用
-
-先安装并运行 [RenoDX DLSS5 base](https://github.com/RankFTW/rhi-repo)。
-解压加速包，双击 **Start.cmd** → 选择游戏目录 → **安装加速补丁**。
-之后照常从 Steam 或原启动器进入游戏。[完整安装说明](docs/install.zh-CN.md)。
-
 [优化方法](docs/optimizations.zh-CN.md) · [尺寸验证](docs/dynamic-dimensions.zh-CN.md) ·
 [后续计划](docs/roadmap.md) · [完整文档](docs/README.md)
 
@@ -60,6 +63,17 @@ RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 An **Ada / RTX 40 acceleration patch** for [RenoDX DLSS5](https://github.com/RankFTW/rhi-repo). It preserves
 NVIDIA's mathematics and data dependencies while tuning data movement, register
 usage and fused-kernel scheduling for Ada.
+
+### Download and install
+
+**[Community base downloads](https://github.com/RankFTW/rhi-repo/releases) · [Patch downloads and setup](docs/downloads.md) · [Releases](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/releases/latest)**
+
+Once the community base works in your game, extract the complete acceleration package,
+run **Start.cmd**, select your game folder and click **Install / update**.
+Launch your game as usual. **Check status** shows the last recorded run;
+**Export diagnostics** and **Report a problem** help if something needs attention.
+
+The current Release provides the source/tools archive; the complete acceleration package is not yet downloadable. See the [download guide](docs/downloads.md) for package details.
 
 ### What we optimize
 
@@ -95,13 +109,6 @@ package is recorded in the [technical report](docs/optimizations.md).
 Added cost is estimated from the whole-frame time difference with DLSS5 on/off.
 The 5070 Ti reference comes from [TechSpot's NBA 2K27 test](https://www.techspot.com/article/3170-real-dlss-5-performance/),
 using a different game and integration.
-
-### Install
-
-First install and run the [RenoDX DLSS5 base](https://github.com/RankFTW/rhi-repo).
-Extract the acceleration package, double-click **Start.cmd**, select your game folder,
-and click **Install acceleration**. Then start the game through Steam or your usual
-launcher. [Full installation guide](docs/install.md).
 
 [Optimization methods](docs/optimizations.md) · [Dimension checks](docs/dynamic-dimensions.md) ·
 [Roadmap](docs/roadmap.md) · [Documentation](docs/README.md)

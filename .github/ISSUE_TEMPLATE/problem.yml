@@ -1,0 +1,23 @@
+name: Installation or game problem / 安装或游戏问题
+description: Get help with installation, activation or visual issues. No benchmark required. / 无需跑分。
+title: "[Problem] "
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Game and graphics card / 游戏与显卡
+      placeholder: Game name + GPU. Add the driver and community base version if you know them.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened? / 遇到了什么问题？
+      description: What were you doing, and what did you see? Screenshots of the message or visual issue help. / 写明操作与现象，可附截图。
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics (optional) / 诊断文件（可选）
+      description: In Start.cmd, select your game folder and click Export diagnostics. Review the ZIP, then attach it here. If export fails, paste the message. / 点击“导出诊断”，查看 ZIP 后附到这里；无法导出时粘贴提示即可。

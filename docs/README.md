@@ -2,6 +2,7 @@
 
 | Topic / 内容 | English | 中文 |
 |---|---|---|
+| Downloads / 下载 | [Packages](downloads.md) | [下载包](downloads.zh-CN.md) |
 | Installation / 安装 | [Guide](install.md) | [指南](install.zh-CN.md) |
 | Technical report / 技术报告 | [Report](optimizations.md) | [报告](optimizations.zh-CN.md) |
 | Benchmarks / 性能 | [Results](benchmarks.md) | [结果](benchmarks.zh-CN.md) |

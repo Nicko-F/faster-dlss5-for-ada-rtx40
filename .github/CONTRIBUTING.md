@@ -1,10 +1,11 @@
 # Contributing
 
 We welcome careful measurements, bug reports and independently authored changes.
-Start with the benchmark issue template for performance and compatibility reports.
-Questions and optimization ideas belong in Discussions once the repository is live.
+Use **Installation or game problem** for setup, activation or visual issues. The
+manager's **Export diagnostics** button prepares an attachment; no benchmark is required.
+Use **Performance results** for measurements. Questions and optimization ideas belong in Discussions.
 
-Include all repeats, the exact base and settings, and distinguish pure NR timing,
+For performance reports, include all repeats, the exact base and settings, and distinguish pure NR timing,
 whole-frame added cost and FPS. Explain how you checked that the optimized route
 was active. A regression report is useful even when the average result is positive.
 
@@ -15,5 +16,4 @@ notice and permission basis. Please do not submit NVIDIA-origin instruction dump
 derived GPU binaries, model weights, runtime files or proprietary game resources.
 
 The maintainer will keep publishing progress and measured results as development
-continues. We cannot commit to a fixed response time, release date or performance
-gain across all hardware. Keep discussion factual and respectful.
+continues. Keep discussion factual and respectful.

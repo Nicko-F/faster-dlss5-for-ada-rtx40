@@ -10,6 +10,7 @@ New-Item -ItemType Directory -Path $bin,$PackageRoot -Force | Out-Null
 # Fixtures exercise filesystem behavior, without launching games or querying a GPU.
 function Assert-Hardware {}
 function Assert-GameClosed {}
+function Get-CimInstance { [pscustomobject]@{Name='Fixture GPU';DriverVersion='1.0'} }
 function Expect-Stop([scriptblock]$Code,[string]$Message) {
     $stopped=$false
     try {& $Code} catch {
@@ -41,7 +42,7 @@ try {
     }
     $manifest=@{schemaVersion=2;profileId='native-dimension-v1';mode=2;files=$files}
     Save-FixtureManifest
-    foreach($name in @('Start.cmd','tools/Manage.ps1','tools/Setup.ps1')) {
+    foreach($name in @(Get-ManagerFiles)) {
         $dest=Join-Path $PackageRoot $name
         New-Item -ItemType Directory -Path (Split-Path -Parent $dest) -Force|Out-Null
         Copy-Item -LiteralPath (Join-Path $repo $name) -Destination $dest
@@ -55,11 +56,56 @@ try {
     $before=@{};foreach($file in Get-ChildItem -LiteralPath $bin -File){$before[$file.Name]=Get-Sha $file.FullName}
     Assert-Baseline $bin
     Require ((Get-GameBin (Split-Path (Split-Path $bin))) -eq $bin) 'Game root resolution failed'
+    Require ((Get-GameBin ($bin+'\')) -eq $bin) 'Trailing directory separator was not normalized'
     [IO.File]::Move((Join-Path $profile 'manifest.json'),(Join-Path $profile 'manifest.saved'))
     Expect-Stop {Get-Profile} 'complete acceleration package'
     [IO.File]::Move((Join-Path $profile 'manifest.saved'),(Join-Path $profile 'manifest.json'))
+    Install-Profile ($bin+'\')
+    # Updating preserves extra files and does not depend on hashes of the base.
+    [IO.File]::WriteAllText((Join-Path $bin 'faster-dlss5/player-note.txt'),'keep me')
     Install-Profile $bin
-    Expect-Stop {Install-Profile $bin} 'already exists'
+    Require (Test-Path -LiteralPath (Join-Path $script:BackupPath 'faster-dlss5/player-note.txt')) 'Update lost player files'
+    Require ((Get-AccelerationStatus $bin).code -eq 'installed') 'Update reused old session evidence'
+    $originalState=Get-Sha (Join-Path $bin 'faster-dlss5-install.json')
+    [IO.File]::WriteAllText((Join-Path $profile 'bundle/integrated-00.cubin'),'broken download')
+    Expect-Stop {Install-Profile $bin} 'package file is damaged'
+    Require ((Get-Sha (Join-Path $bin 'faster-dlss5-install.json')) -eq $originalState) 'Bad download altered installation'
+    [IO.File]::WriteAllText((Join-Path $profile 'bundle/integrated-00.cubin'),'test fixture bundle/integrated-00.cubin')
+    # Inject a failure during activation, after the old copy has been saved.
+    function Move-Item {
+        param($LiteralPath,$Destination)
+        if($LiteralPath -match 'faster-dlss5-stage-[a-f0-9]+[\\/]ada-nr.addon64$'){throw 'Simulated activation failure'}
+        Microsoft.PowerShell.Management\Move-Item -LiteralPath $LiteralPath -Destination $Destination
+    }
+    Expect-Stop {Install-Profile $bin} 'Simulated activation failure'
+    Remove-Item Function:\Move-Item
+    Require ((Get-Sha (Join-Path $bin 'faster-dlss5-install.json')) -eq $originalState) 'Failed update did not restore installation'
+    Require ((Get-AccelerationStatus $bin).code -eq 'installed') 'Restored installation is unusable'
+    $downloadRoot=$PackageRoot
+    $PackageRoot=Join-Path $bin 'faster-dlss5'
+    Install-Profile $bin
+    $PackageRoot=$downloadRoot
+    Require ((Get-AccelerationStatus $bin).code -eq 'installed') 'Update from installed manager failed'
+    # A separate process holds the same mutex while all mutation paths are tried.
+    $job=Start-Job -ArgumentList $repo,$bin -ScriptBlock {
+        param($repo,$bin)
+        . (Join-Path $repo 'tools/Manage.ps1')
+        $mutex=Enter-InstallationLock $bin
+        try {Write-Output 'locked';Start-Sleep -Seconds 15} finally {$mutex.ReleaseMutex();$mutex.Dispose()}
+    }
+    try {
+        $ready=$false
+        for($attempt=0;$attempt -lt 50;$attempt++) {
+            if(@(Receive-Job $job -Keep) -contains 'locked'){$ready=$true;break}
+            Start-Sleep -Milliseconds 100
+        }
+        Require $ready 'Lock fixture did not start'
+        Expect-Stop {Install-Profile $bin} 'Another installation'
+        Expect-Stop {Install-Profile ($bin+'\')} 'Another installation'
+        Expect-Stop {Remove-Profile ($bin+'\')} 'Another installation'
+        Expect-Stop {Remove-Profile $bin} 'Another installation'
+        Expect-Stop {Remove-Profile $bin $true} 'Another installation'
+    } finally {Stop-Job $job;Remove-Job $job}
     Require ((Get-Sha (Join-Path $bin 'ada-nr.addon64')) -eq $files['ada-nr.addon64']) 'Installed bytes differ'
     [IO.File]::WriteAllText((Join-Path $bin 'ada-nr.addon64'),'unknown replacement')
     Expect-Stop {Remove-Profile $bin} 'Addon changed'
@@ -68,9 +114,32 @@ try {
     $bundle=Join-Path (Get-Installation $bin).profile.root 'bundle'
     [IO.File]::WriteAllText((Join-Path $bundle 'launch-time.txt'),[DateTime]::UtcNow.AddSeconds(-10).ToString('o'))
     [IO.File]::WriteAllText((Join-Path $bundle 'ada-nr-events.log'),"hook,1,mode,2`nevaluate_hook,1`n")
+    Require ((Get-AccelerationStatus $bin).code -eq 'waiting') 'Loaded addon without frames was not shown as waiting'
+    [IO.File]::AppendAllText((Join-Path $bundle 'ada-nr-events.log'),"load_failed`n")
+    Require ((Get-AccelerationStatus $bin).code -eq 'partial') 'Failure before first frame was shown as waiting'
+    [IO.File]::WriteAllText((Join-Path $bundle 'ada-nr-events.log'),"hook,1,mode,2`nevaluate_hook,1`n")
     $header='graph,optimized,replaced,guard_failed,launch_errors,width,height,frontback,surface_failed,history_native,output_format'
     [IO.File]::WriteAllText((Join-Path $bundle 'ada-nr-frames.csv'),"$header`n0,1,145,0,0,1920,1080,0,0,2,28`n1,1,145,0,0,2560,1600,2,0,0,28`n2,1,145,0,0,3440,1440,2,0,0,28`n")
     Require ((Get-AccelerationStatus $bin).code -eq 'active') 'Normal-launch evidence was not accepted'
+    $privatePath=Join-Path $testRoot 'personal folder/secret.txt'
+    [IO.File]::AppendAllText((Join-Path $bundle 'ada-nr-events.log'),"path,$privatePath`n")
+    $exportPath=Join-Path $testRoot 'diagnostics.zip'
+    Export-Diagnostics $bin $exportPath ('Token '+'ghp_'+('x'*30))|Out-Null
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive=[IO.Compression.ZipFile]::OpenRead($exportPath)
+    try {
+        Require ($archive.Entries.Count -eq 4) 'Diagnostic export has unexpected files'
+        foreach($entry in $archive.Entries) {
+            Require ($entry.FullName -in @('summary.json','README.txt','ada-nr-events.log','ada-nr-frames.csv')) 'Binary or unexpected diagnostic file'
+            $reader=New-Object IO.StreamReader($entry.Open())
+            try {$text=$reader.ReadToEnd()} finally {$reader.Dispose()}
+            Require (-not $text.Contains($privatePath) -and $text -notmatch '[A-Za-z]:\\' -and $text -notmatch 'ghp_') 'Diagnostic export leaked private text'
+            if($entry.FullName -eq 'summary.json'){Require (($text|ConvertFrom-Json).status -eq 'active') 'Diagnostic summary is invalid'}
+        }
+    } finally {$archive.Dispose()}
+    $exportSha=Get-Sha $exportPath
+    Expect-Stop {Export-Diagnostics $bin $exportPath} 'already exists'
+    Require ((Get-Sha $exportPath) -eq $exportSha) 'Export overwrote an existing file'
     Show-Status $bin
     $sessionRows=Get-Content -LiteralPath (Join-Path $bundle 'ada-nr-frames.csv')
     $qualificationCsv=$sessionRows[0]+",qualification,contract_qualified`n"+"0,0,0,0,0,1920,1080,0,0,2,28,1,0`n1,0,0,0,0,1920,1080,0,0,0,28,1,1`n2,1,145,0,0,1920,1080,2,0,0,28,0,1`n"

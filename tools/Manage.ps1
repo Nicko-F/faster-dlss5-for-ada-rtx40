@@ -9,6 +9,11 @@ $PackageRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 
 function Read-Json([string]$Path) { Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json }
 function Get-Sha([string]$Path) { (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+function Get-NormalDirectory([string]$Path) {
+    $full=[IO.Path]::GetFullPath($Path);$root=[IO.Path]::GetPathRoot($full)
+    if($full.Length -gt $root.Length){return $full.TrimEnd([char[]]'\/')}
+    return $root
+}
 function Assert-PlainPath([string]$Path) {
     $cursor=[IO.Path]::GetFullPath($Path)
     while($cursor) {
@@ -25,6 +30,7 @@ function Get-GameBin([string]$Path) {
     if(-not $Path){throw 'Select the folder containing your community DLSS5 addon.'}
     $resolved=(Resolve-Path -LiteralPath $Path.Trim('"')).Path
     if(Test-Path -LiteralPath $resolved -PathType Leaf){$resolved=Split-Path -Parent $resolved}
+    $resolved=Get-NormalDirectory $resolved
     $direct=Join-Path $resolved 'renodx-dlss5.addon64'
     if(Test-Path -LiteralPath $direct){Assert-PlainPath $resolved;return $resolved}
     # Search only inside the folder selected by the player, without following links.
@@ -89,7 +95,7 @@ function Get-Profile([bool]$VerifyPayload=$true,[string]$Root=$PackageRoot) {
     return @{root=$dir; manifest=$manifest; sha=(Get-Sha (Join-Path $dir 'ada-nr.addon64'))}
 }
 function Get-ManagerFiles {
-    @('Start.cmd','tools/Manage.ps1','tools/Setup.ps1')
+    @('Start.cmd','tools/Manage.ps1','tools/Setup.ps1','tools/PlayerSupport.ps1')
 }
 function Get-OwnedTarget([string]$Root,[string]$Name) {
     $allowed=($Name -in @(Get-ManagerFiles)) -or $Name -eq 'profiles/automatic/manifest.json' -or
@@ -97,8 +103,7 @@ function Get-OwnedTarget([string]$Root,[string]$Name) {
     if(-not $allowed){throw 'Invalid installed file path.'}
     $target=Join-Path $Root $Name;Assert-PlainPath $target;return $target
 }
-function Install-Profile([string]$Bin) {
-    Assert-PlainPath $Bin;Assert-GameClosed $Bin;Assert-Baseline $Bin;Assert-Hardware
+function Write-NewInstallation([string]$Bin) {
     $profile=Get-Profile
     $target=Join-Path $Bin 'ada-nr.addon64';$statePath=Join-Path $Bin 'faster-dlss5-install.json'
     $root=Join-Path $Bin 'faster-dlss5'
@@ -122,7 +127,88 @@ function Install-Profile([string]$Bin) {
     }
     [IO.File]::Copy((Join-Path $profile.root 'ada-nr.addon64'),$target,$false)
     if((Get-Sha $target) -ne $profile.sha){throw 'Addon copy incomplete. Use Remove and install again.'}
-    Write-Host 'Acceleration installed. Start the game from your usual launcher. You can move or delete the downloaded package.'
+}
+function Enter-InstallationLock([string]$Bin) {
+    $Bin=Get-NormalDirectory $Bin
+    $hasher=[Security.Cryptography.SHA256]::Create()
+    try {$key=[BitConverter]::ToString($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes([IO.Path]::GetFullPath($Bin).ToLowerInvariant()))).Replace('-','')}
+    finally {$hasher.Dispose()}
+    $mutex=New-Object Threading.Mutex($false,('Local\FasterDLSS5-'+$key))
+    try {
+        try {$locked=$mutex.WaitOne(0)} catch [Threading.AbandonedMutexException] {$locked=$true}
+        if(-not $locked){throw 'Another installation is running. Wait for it to finish and retry.'}
+        return $mutex
+    } catch {$mutex.Dispose();throw}
+}
+function Install-Profile([string]$Bin) {
+    $Bin=Get-NormalDirectory $Bin
+    Assert-PlainPath $Bin;Assert-GameClosed $Bin;Assert-Baseline $Bin
+    $script:BackupPath=$null
+    $mutex=Enter-InstallationLock $Bin
+    $locked=$false;$stage=$null;$backup=$null;$oldMoved=@();$newMoved=@();$rollbackFailed=$false
+    try {
+        $locked=$true
+        $names=@('faster-dlss5','faster-dlss5-install.json','ada-nr.addon64')
+        foreach($name in $names){Assert-PlainPath (Join-Path $Bin $name)}
+        $existing=@($names | Where-Object {Test-Path -LiteralPath (Join-Path $Bin $_)})
+        if($existing.Count) {
+            $recordPath=Join-Path $Bin 'faster-dlss5-install.json'
+            if(-not (Test-Path -LiteralPath $recordPath)){throw 'Installation record missing. Move the existing patch files aside, then retry.'}
+            $record=Read-Json $recordPath
+            if($record.schemaVersion -notin @(1,2,3) -or $record.addonSha256 -notmatch '^[a-f0-9]{64}$') {throw 'Invalid installation record.'}
+            if($record.schemaVersion -ne 1 -and $record.profileId -ne 'native-dimension-v1'){throw 'Invalid installation record.'}
+        }
+        # Prepare and verify every new file before touching the installed copy.
+        $stage=Join-Path $Bin ('faster-dlss5-stage-'+[guid]::NewGuid().ToString('N'))
+        [IO.Directory]::CreateDirectory($stage)|Out-Null
+        Write-NewInstallation $stage
+        $settings=Join-Path $Bin 'faster-dlss5/build/player-settings.json'
+        Assert-PlainPath $settings
+        if(Test-Path -LiteralPath $settings) {
+            $settingsDir=Join-Path $stage 'faster-dlss5/build'
+            [IO.Directory]::CreateDirectory($settingsDir)|Out-Null
+            [IO.File]::Copy($settings,(Join-Path $settingsDir 'player-settings.json'))
+        }
+        Assert-GameClosed $Bin
+        $backup=Join-Path $Bin ('faster-dlss5-backup-'+[guid]::NewGuid().ToString('N'))
+        [IO.Directory]::CreateDirectory($backup)|Out-Null
+        foreach($name in $existing) {
+            Move-Item -LiteralPath (Join-Path $Bin $name) -Destination (Join-Path $backup $name)
+            $oldMoved+=$name
+        }
+        # Addon is activated last, after the bundle and installation record exist.
+        foreach($name in $names) {
+            Move-Item -LiteralPath (Join-Path $stage $name) -Destination (Join-Path $Bin $name)
+            $newMoved+=$name
+        }
+        if($existing.Count){$script:BackupPath=$backup;Write-Host "Previous installation saved to: $backup"}
+        else {Remove-Item -LiteralPath $backup}
+    } catch {
+        $failure=$_
+        try {
+            [array]::Reverse($newMoved)
+            foreach($name in $newMoved) {
+                Move-Item -LiteralPath (Join-Path $Bin $name) -Destination (Join-Path $stage $name)
+            }
+            foreach($name in $oldMoved) {
+                Move-Item -LiteralPath (Join-Path $backup $name) -Destination (Join-Path $Bin $name)
+            }
+            if($backup -and (Test-Path -LiteralPath $backup) -and -not @(Get-ChildItem -LiteralPath $backup -Force).Count){Remove-Item -LiteralPath $backup}
+        } catch {
+            $rollbackFailed=$true
+            throw "Update interrupted; recovery files are in $backup and $stage. $($_.Exception.Message)"
+        }
+        throw $failure
+    } finally {
+        try {
+            if($stage -and -not $rollbackFailed -and (Test-Path -LiteralPath $stage)) {
+                $resolved=[IO.Path]::GetFullPath($stage)
+                if((Split-Path -Parent $resolved) -ne [IO.Path]::GetFullPath($Bin) -or (Split-Path -Leaf $resolved) -notmatch '^faster-dlss5-stage-[a-f0-9]{32}$'){throw 'Invalid staging folder.'}
+                Assert-PlainPath $resolved
+                Remove-Item -LiteralPath $resolved -Recurse -Force
+            }
+        } finally {if($locked){$mutex.ReleaseMutex()};$mutex.Dispose()}
+    }
 }
 function Get-Installation([string]$Bin,[bool]$VerifyPayload=$true) {
     $statePath=Join-Path $Bin 'faster-dlss5-install.json';Assert-PlainPath $statePath
@@ -140,6 +226,13 @@ function Get-Installation([string]$Bin,[bool]$VerifyPayload=$true) {
     return @{state=$state;profile=$profile}
 }
 function Remove-Profile([string]$Bin,[bool]$RecordOnly=$false) {
+    $Bin=Get-NormalDirectory $Bin
+    Assert-PlainPath $Bin
+    $mutex=Enter-InstallationLock $Bin
+    try {Remove-InstalledFiles $Bin $RecordOnly}
+    finally {$mutex.ReleaseMutex();$mutex.Dispose()}
+}
+function Remove-InstalledFiles([string]$Bin,[bool]$RecordOnly=$false) {
     Assert-GameClosed $Bin
     $statePath=Join-Path $Bin 'faster-dlss5-install.json';Assert-PlainPath $statePath
     $state=Read-Json $statePath
@@ -191,10 +284,13 @@ function Get-AccelerationStatus([string]$Bin) {
     if(-not (Test-Path -LiteralPath $addon) -or (Get-Sha $addon) -ne $install.profile.sha){throw 'Installed addon is missing or changed. Remove and reinstall the patch.'}
     $bundle=Join-Path $install.profile.root 'bundle'
     $events=Join-Path $bundle 'ada-nr-events.log';$frames=Join-Path $bundle 'ada-nr-frames.csv'
-    if(-not (Test-Path -LiteralPath $events) -or -not (Test-Path -LiteralPath $frames)){return @{code='installed';graphs=0;bundle=$bundle}}
     $installed=[DateTime]::Parse($install.state.installedUtc).ToUniversalTime()
-    if((Get-Item -LiteralPath $events).LastWriteTimeUtc -lt $installed -or (Get-Item -LiteralPath $frames).LastWriteTimeUtc -lt $installed){return @{code='installed';graphs=0;bundle=$bundle}}
+    if(-not (Test-Path -LiteralPath $events) -or (Get-Item -LiteralPath $events).LastWriteTimeUtc -lt $installed){return @{code='installed';graphs=0;bundle=$bundle}}
     $log=Get-Content -LiteralPath $events -Raw
+    if(-not (Test-Path -LiteralPath $frames) -or (Get-Item -LiteralPath $frames).LastWriteTimeUtc -lt $installed) {
+        $code=if($log -match 'failed|sequence_fallback'){'partial'}else{'waiting'}
+        return @{code=$code;graphs=0;bundle=$bundle;lastRun=(Get-Item -LiteralPath $events).LastWriteTime}
+    }
     $rows=@(Import-Csv -LiteralPath $frames)
     $qualifiedRows=@($rows | Where-Object {
         $_.qualification -eq '1' -and $_.optimized -eq '0' -and $_.replaced -eq '0' -and
@@ -234,6 +330,7 @@ function Invoke-Manager {
         'Remove' {Remove-Profile $bin ([bool]$ForgetRecordOnly)}
     }
 }
+. (Join-Path $PSScriptRoot 'PlayerSupport.ps1')
 if($MyInvocation.InvocationName -ne '.') {
     try {Invoke-Manager} catch {Write-Host $_.Exception.Message -ForegroundColor Red;exit 1}
 }

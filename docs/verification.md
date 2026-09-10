@@ -5,10 +5,17 @@
 - Windows PowerShell 5.1 fixture tests cover game-folder discovery, updated base
   files, copied bundle placement, moving the download, normal-launch status,
   native qualification, incomplete/modified files, interrupted-install recovery,
-  uninstall and reinstall. Community files are checked for preservation.
+  uninstall and reinstall. Update tests inject a failure during activation and
+  verify restoration of the old installation, reject a damaged download before
+  replacement, preserve additional files, update from the installed manager, and
+  exercise competing processes (including trailing-separator directory aliases).
+  Community files are checked for preservation.
+- Diagnostic export tests verify the text-only file list, path/token redaction,
+  readable status JSON, and refusal to overwrite an existing export.
 - The English/Chinese Windows form is constructed and its labels checked using
-  the built-in Windows Forms runtime. This is a construction check, not a visual
-  click-through test.
+  the built-in Windows Forms runtime. Both languages are also rendered for visual
+  inspection. Installer filesystem operations run against isolated fixtures;
+  these checks do not launch a game.
 - Runtime loading negotiates the selected entry points. Native route tests verify
   initial qualification, live negative guards, unchanged caller argument blocks
   and descriptors, and invalid-sequence recovery. The build audits Evaluate's

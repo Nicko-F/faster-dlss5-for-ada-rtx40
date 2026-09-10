@@ -1,5 +1,5 @@
-name: Benchmark or compatibility report
-description: Share all repeats and the exact environment; do not upload vendor files.
+name: Performance results / 性能分享
+description: Share your FPS or inference measurements. For installation or game problems, choose the problem form.
 title: "[Benchmark] GPU / resolution / game"
 body:
   - type: textarea
@@ -19,5 +19,5 @@ body:
   - type: textarea
     id: behavior
     attributes:
-      label: Visual issues or failures
-      description: Describe the issue and reproduction steps. Do not attach proprietary kernels, runtime files or weights.
+      label: Additional observations
+      description: Optional notes about image quality, stability or repeat-to-repeat variation.
