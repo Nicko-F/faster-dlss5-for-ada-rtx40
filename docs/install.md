@@ -25,9 +25,9 @@ See [scope and validation](dynamic-dimensions.md).
 
 ## Complete local package
 
-1. Close the game. If v0.1 is installed, use **Remove** first; v0.2 can recognize
+1. Close the game. If an earlier fixed-size draft is installed, use **Remove** first; this draft can recognize
    and remove its recorded addon. Do not overwrite an existing installation.
-2. Extract the entire v0.2 archive to a writable folder and keep it there.
+2. Extract the entire automatic-dimension draft archive to a writable folder and keep it there.
 3. Double-click **Start.cmd**, choose **Check compatibility**, and enter the game folder.
 4. Choose **Install**, then **Launch**. Choose your resolution in the game normally.
 5. After exiting, choose **Verify latest run**. It reports observed NR dimensions
@@ -58,6 +58,6 @@ Changed or unknown addon files are never overwritten or silently deleted.
 `-Action Remove -ForgetRecordOnly` explicitly forgets only our record and keeps
 any addon file; it does not uninstall that file.
 
-`compatibility/automatic.lock.json` pins the v0.2 manifest and addon; the legacy
-lock is retained only for v0.1 removal. Hashes detect drift, not independent
+`compatibility/automatic.lock.json` pins the automatic-dimension draft manifest and addon; the legacy
+lock is retained only for fixed-size draft removal. Hashes detect drift, not independent
 publisher authentication. Obtain the entire package from the project owner.

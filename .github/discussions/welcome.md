@@ -4,7 +4,7 @@ This is a private review space for **Faster DLSS5 for Ada / RTX 40**. We will ke
 updating optimization notes, measured results and compatibility work here. Public
 publication remains a later decision.
 
-[中文讨论说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/DISCUSSION_WELCOME.zh-CN.md)
+[中文讨论说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/.github/discussions/welcome.zh-CN.md)
 
 The current source preview contains tools and measurements, not the GPU
 acceleration payload. Its absence is intentional while redistribution rights are

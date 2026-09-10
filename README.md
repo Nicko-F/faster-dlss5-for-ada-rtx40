@@ -1,88 +1,119 @@
 # Faster DLSS5 for Ada / RTX 40
 
-**Making community DLSS5 neural rendering faster on Ada, with measured results.**
+**Faster neural rendering on RTX 40. / 让 RTX 40 的 DLSS5 神经渲染更快。**
 
-[中文](README.zh-CN.md) · [How it works](docs/optimizations.md) · [Measurements](docs/benchmarks.md) · [Install guide](docs/install.md) · [Roadmap](ROADMAP.md)
+<a id="chinese"></a>
+<details name="language">
+<summary><strong>简体中文</strong></summary>
 
-On our RTX 4080, the measured v0.1 experimental build reduces **4K neural-network GPU time by 8.16% in independent runs and 10.30% in interleaved runs**. In Cyberpunk 2077, the same optimization line improves **4K average FPS by 4.20%** over our pinned community baseline.
+基于社区 DLSS5 底座的轻量加速补丁。保留 NVIDIA 的数学运算与数据依赖，
+针对 Ada 优化数据搬运、寄存器使用和融合内核调度。
 
-**Release status: private review repository; source and tooling preview.** The complete accelerator has been assembled for local testing. Its optimized GPU binaries are derived from NVIDIA-origin code; redistribution permission has not been established, so they are **not included in this public source tree**. Downloading this preview alone does not enable acceleration. See [release contents and permission status](docs/distribution.md). There is no public ready-to-use accelerator release yet.
+### 优化内容
 
-## What we improve
+- **异步搬运**：恢复计算与拷贝的重叠，减少不必要的等待。
+- **寄存器与 spill**：缩短变量活跃区间，将加载移近使用位置，减少栈访问。
+- **Shared memory 与调度**：改善 attention、FFN 和上下采样的片上数据复用。
+- **自动尺寸**：一次安装，沿用 DLSS5 的分区与 padding。16:10、超宽屏无需独立配置。
 
-**An acceleration patch on top of a working community base.** We do not replace
-the base's compatibility implementation. Keep its runtime, model, game insertion,
-resource setup and resolution handling. The complete local patch adds only our
-addon and selected optimized kernels; unsupported optimization contracts retain
-the corresponding base calls. Compatibility work here covers the patch's own
-execution requirements, not every issue in the community stack.
+base 继续负责模型、运行库和游戏接入；补丁增加优化插件与选用的加速内核。
 
-- **Asynchronous data movement:** preserve useful producer/consumer overlap when adapting bulk-copy paths to Ada, instead of introducing unnecessary waits at each copy. Synchronization still protects every dependency.
-- **Register pressure and spills:** schedule fragment loads near their use, shorten live ranges, and tune register budgets in fused projections, attention and FFN stages. Some audited projections eliminate their local stack traffic.
-- **Uniform/scalar lowering differences:** adaptation can move work into general registers and increase pressure. This is one observed contributor, not proof that RTX 40 lacks uniform registers or that every spill comes from this difference.
-- **Shared memory and stage scheduling:** retain measured shared-memory spill/staging improvements and automatic execution choices based on native layer dimensions. We do not move all spills into shared memory indiscriminately.
-- **Guarded Pre/Post integration:** add preprocessing and postprocessing improvements where the exact shape, format and temporal-history requirements match.
+### 实测成绩
 
-The objective is to preserve NVIDIA's mathematics and data dependencies while organizing execution for Ada. Reported timings concern the measured experimental builds; they do not promise a fixed gain on every card, scene or game. [Technical explanation](docs/optimizations.md).
+RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 
-## Results
-
-These timing tables describe the frozen v0.1 builds. v0.2 adds automatic dimension handling and has separate correctness validation; it has not received a new game or performance benchmark.
-
-RTX 4080, driver 616.56, Ryzen 9 9950X. Lower is better for milliseconds. Pure NR uses fixed synthetic model1/sRGB inputs, 100 warmup + 400 measured frames. Each row aggregates two runs; methods remain separate.
-
-| Resolution | Pure NR method | Community ms | Optimized ms | Time reduction |
-|---|---|---:|---:|---:|
-| 1080p | Independent | 4.8164 | 4.5786 | 4.94% |
-| 1080p | Interleaved | 4.7539 | 4.4994 | 5.35% |
-| 1440p | Interleaved | 7.5083 | 6.8246 | 9.11% |
-| 4K | Independent | 18.2810 | 16.7892 | 8.16% |
-| 4K | Interleaved | 17.6821 | 15.8614 | 10.30% |
-
-Cyberpunk 2077 2.31 built-in benchmark, High raster, native DLAA, SDR, RT/PT/RR/FG/DRS/Reflex/VSync and frame cap off. Two runs per version. Original game means the experimental NR/ReShade stack is absent.
-
-| Resolution | Original game FPS | Community DLSS5 FPS | Optimized DLSS5 FPS | FPS gain over community |
+| 分辨率 | 纯 NR 社区 → 优化 | NR 降耗时 | 游戏社区 → 优化 FPS | FPS 提升 |
 |---|---:|---:|---:|---:|
-| 1080p | 179.57 | 91.37 | 92.62 | 1.36% |
-| 1440p | 134.78 | 66.77 | 69.50 | 4.10% |
-| 4K | 64.66 | 31.08 | 32.38 | 4.20% |
+| 1080p | 4.754 → 4.499 ms | 5.35% | 91.37 → 92.62 | 1.36% |
+| 1440p | 7.508 → 6.825 ms | 9.11% | 66.77 → 69.50 | 4.10% |
+| 4K | 17.682 → 15.861 ms | 10.30% | 31.08 → 32.38 | 4.20% |
 
-1080p game gains vary: the two latest paired gains are 0.42% / 2.33%; an earlier complete cohort produced 0.40% overall. GPU clocks were not locked. 1440p lacks an independent-process NR timing pair. Interleaved runs share temporal history and do not replace separate correctness checks. These are experimental results, not a universal performance guarantee.
+纯 NR 表采用交替对照；4K 独立进程结果为 **18.281 → 16.789 ms（−8.16%）**。
+游戏使用《赛博朋克 2077》内置 benchmark。完整设置、重复测量和 1080p 波动见[测试报告](docs/benchmarks.zh-CN.md)。
+这些成绩来自此前固定尺寸构建；当前自动尺寸构建已通过 12 组正确性对照，性能待测。
 
-### In-game added frame cost and the RTX 5070 Ti reference
+| 分辨率 | 游戏新增帧成本：社区 → 优化 | 公开 RTX 5070 Ti 参考 |
+|---|---:|---:|
+| 1080p | 5.377 → 5.228 ms | — |
+| 1440p | 7.558 → 6.968 ms | 7.8 ms |
+| 4K | 16.714 → 15.416 ms | 17.0 ms |
 
-We average each run's `1000 / FPS`, then subtract the same cohort's original-game average frame time. This estimates the **whole-frame cost added by enabling DLSS5**, including integration and synchronization; it is not isolated neural-network GPU time.
+新增帧成本按开启/关闭 DLSS5 的整帧时间差估算。
+5070 Ti 参考来自 [TechSpot 的《NBA 2K27》测试](https://www.techspot.com/article/3170-real-dlss-5-performance/)，游戏与接入不同。
 
-| Resolution | 4080 community added ms | 4080 optimized added ms | Saved ms | Cost reduction vs community | 5070 Ti external reference ms |
-|---|---:|---:|---:|---:|---:|
-| 1080p | 5.377 | 5.228 | 0.148 | 2.76% | — |
-| 1440p | 7.558 | 6.968 | 0.590 | 7.80% | 7.8 |
-| 4K | 16.714 | 15.416 | 1.298 | 7.77% | 17.0 |
+### 使用与进度
 
-The 5070 Ti numbers are from [TechSpot / Tim Schiesser, September 4, 2026](https://www.techspot.com/article/3170-real-dlss-5-performance/), testing **NBA 2K27's official integration**. Our 1440p/4K estimates are numerically 10.66%/9.32% lower than those published reference values. Different games, integrations and software/platform conditions mean this **does not establish that our 4080 is faster than a 5070 Ti under matched conditions**. The source's render-time table does not provide 1080p.
+在已正常运行的 **ReShade 6.8.0 + RenoDX DLSS5 4.70 + 社区 NR 310.8.0** 上使用补丁。
+完整本地包通过 `Start.cmd` 安装、启动和卸载，分辨率在游戏中正常选择。
+仓库目前用于开发，首次发布待定；[安装与包内容](docs/install.zh-CN.md)。
 
-[Per-run measurements and calculation tool](docs/benchmarks.md) are included. Anyone can reproduce the table arithmetic without a GPU; reproducing the inference experiments also requires the currently withheld runtime/kernel dependencies.
+[优化方法](docs/optimizations.zh-CN.md) · [尺寸验证](docs/dynamic-dimensions.zh-CN.md) ·
+[后续计划](docs/roadmap.md) · [完整文档](docs/README.md)
 
-## Which community baseline?
+我们会持续更新优化和实测结果。欢迎在 [Discussions](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/discussions)
+交流思路，在 [Issues](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues) 提交测试或问题。
 
-The measured game base is **ReShade 6.8.0 with addon support + RenoDX DLSS5 addon 4.70 + community-modified NR runtime 310.8.0**. We add our optimization layer to that installation. This is not a comparison against an unspecified “latest community version.” Exact file identities are in [baseline.json](compatibility/baseline.json).
+</details>
 
-The laboratory work used [kibblerz/DLSS5-Reshade-AIO](https://github.com/kibblerz/DLSS5-Reshade-AIO) at `74b9a2d4b32dcf958833ef11e712c153accada9d` and [DLSS5-Feeder](https://github.com/jlrouzies-fr/DLSS5-Feeder) at `75754b2278914d4b4bfb0accc4fd3d6333369b42`. The game's ReShade/RenoDX insertion path is separate from that laboratory host. [Credits and dependency notices](THIRD_PARTY_NOTICES.md).
+<details name="language" open>
+<summary><strong>English</strong></summary>
 
-## Use and compatibility
+A lightweight acceleration patch for the community DLSS5 baseline. It preserves
+NVIDIA's mathematics and data dependencies while tuning data movement, register
+usage and fused-kernel scheduling for Ada.
 
-The public tools require Windows PowerShell 5.1, already present on the tested Windows system. Run `Start.cmd` to open the manager. It can inspect a matching installation; **Install and Launch require a complete acceleration payload**, which this source preview does not provide.
+### What we optimize
 
-The v0.2 local package installs once and follows the native runtime dimensions automatically, including 16:10 and ultrawide shapes. There is no resolution selector. DLSS5 still owns partitioning, padding and launch parameters; the optimizer changes the selected GPU function only. The tested sizes are validation samples, not a whitelist. [Dynamic dimension validation](docs/dynamic-dimensions.md). It checks hashes, refuses unknown existing addon files, launches with process-local settings, verifies routing logs and removes only its own installation. [Step-by-step guide](docs/install.md).
+- **Asynchronous copies:** overlap transfers with computation and reduce unnecessary waits.
+- **Registers and spills:** shorten live ranges and load fragments closer to use.
+- **Shared memory and scheduling:** improve on-chip reuse in attention, FFN and sampling stages.
+- **Automatic dimensions:** install once and follow DLSS5's own partitioning and padding, including 16:10 and ultrawide shapes.
 
-Validated target: RTX 4080 / driver 616.56 / Cyberpunk 2077 2.31. Other RTX 40 cards, newer drivers, HDR, RT/PT/FG combinations and other games are future validation targets. The manager intentionally stops on unvalidated hardware or binary identities. Keep a working community installation; no runtime, model weights or proprietary addon is bundled or automatically fetched.
+The base supplies the model, runtime and game integration. The patch adds our
+optimizer addon and selected accelerated kernels.
 
-## Discussion and continuing development
+### Measured results
 
-We intend to continue publishing new optimizations, measured results, compatibility updates and release notes. We welcome benchmark reports, questions, reproducibility checks and contributions. The [roadmap](ROADMAP.md) records what is measured and what remains open; we do not promise a fixed release cadence or universal percentage gain.
+RTX 4080 · driver 616.56 · Ryzen 9 9950X.
 
-The repository is private. [Issues](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues) and [Discussions](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/discussions) are enabled for collaborators with repository access. Public publication remains a future decision. Please do not attach proprietary kernels, runtime DLLs, model weights, game resources or logs containing personal paths. Use the included [benchmark report template](.github/ISSUE_TEMPLATE/benchmark.yml).
+| Resolution | Pure NR: community → optimized | NR time reduction | Game: community → optimized FPS | FPS gain |
+|---|---:|---:|---:|---:|
+| 1080p | 4.754 → 4.499 ms | 5.35% | 91.37 → 92.62 | 1.36% |
+| 1440p | 7.508 → 6.825 ms | 9.11% | 66.77 → 69.50 | 4.10% |
+| 4K | 17.682 → 15.861 ms | 10.30% | 31.08 → 32.38 | 4.20% |
 
-## License
+Pure NR rows use interleaved runs. Separate 4K processes measured
+**18.281 → 16.789 ms (−8.16%)**. Game results use Cyberpunk 2077's built-in benchmark.
+See [methods and repeats](docs/benchmarks.md), including the variable 1080p game gain.
+These timings belong to earlier fixed-size builds; the automatic-dimension build
+has passed 12 correctness pairs and awaits performance measurement.
 
-Original source, documentation and the exported measurements in this preview are provided under the [MIT License](LICENSE). This license grants no rights to NVIDIA, ReShade, RenoDX or other third-party software. NVIDIA, DLSS and GeForce RTX are trademarks of their respective owners. This is an independent project, not an NVIDIA release or endorsement.
+| Resolution | Added game frame cost: community → optimized | Published RTX 5070 Ti reference |
+|---|---:|---:|
+| 1080p | 5.377 → 5.228 ms | — |
+| 1440p | 7.558 → 6.968 ms | 7.8 ms |
+| 4K | 16.714 → 15.416 ms | 17.0 ms |
+
+Added cost is estimated from the whole-frame time difference with DLSS5 on/off.
+The 5070 Ti reference comes from [TechSpot's NBA 2K27 test](https://www.techspot.com/article/3170-real-dlss-5-performance/),
+using a different game and integration.
+
+### Getting started
+
+Start with a working **ReShade 6.8.0 + RenoDX DLSS5 4.70 + community NR 310.8.0** base.
+The complete local patch uses `Start.cmd` to install, launch and remove it;
+choose the resolution in the game as usual. Development is ongoing, with the
+first release still to come. See [installation and package contents](docs/install.md).
+
+[Optimization methods](docs/optimizations.md) · [Dimension checks](docs/dynamic-dimensions.md) ·
+[Roadmap](docs/roadmap.md) · [Documentation](docs/README.md)
+
+We will keep sharing new optimizations and measurements. Join
+[Discussions](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/discussions) for ideas,
+or use [Issues](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues) for reports.
+
+</details>
+
+---
+
+[MIT License](LICENSE) · [Credits](docs/credits.md)

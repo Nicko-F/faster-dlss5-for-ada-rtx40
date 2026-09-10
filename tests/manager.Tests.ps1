@@ -109,7 +109,7 @@ try {
     Expect-Stop {Remove-Profile $bin} 'Addon changed'
     Remove-Profile $bin $true
     Require (Test-Path (Join-Path $bin 'ada-nr.addon64')) 'Record-only recovery removed an unknown file'
-    # Legacy v0.1 records remain removable without reinstalling the old package.
+    # Legacy earlier fixed-size draft records remain removable without reinstalling the old package.
     [IO.File]::WriteAllText((Join-Path $bin 'ada-nr.addon64'),'test fixture ada-nr.addon64')
     @{schemaVersion=1;resolution='1920x1080';addonSha256=$files['ada-nr.addon64']} |
         ConvertTo-Json | Set-Content $statePath

@@ -2,7 +2,7 @@
 
 [中文](dynamic-dimensions.zh-CN.md)
 
-v0.2 removes the manual 1080p / 1440p / 4K installation choice. The same addon and
+The automatic-dimension draft removes the manual 1080p / 1440p / 4K installation choice. The same addon and
 GPU bundle follow the dimensions supplied by DLSS5. Aspect ratio is not an
 optimization profile: 16:10 and ultrawide inputs use the same path.
 
@@ -48,5 +48,5 @@ generalizes dimensions, not the set of validated GPUs, drivers, games or modes.
 The public-compatible source preview contains the manager and results only; the
 private implementation and derived GPU files remain outside it.
 
-The timing tables elsewhere retain their v0.1 provenance. This dimension work
+The timing tables elsewhere retain their fixed-size draft provenance. This dimension work
 does not establish a new percentage speedup at the newly checked sizes.

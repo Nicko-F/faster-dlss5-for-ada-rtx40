@@ -1,6 +1,6 @@
 # 欢迎讨论
 
-[English](DISCUSSION_WELCOME.md)
+[English](welcome.md)
 
 这是 **Faster DLSS5 for Ada / RTX 40** 的私有审阅讨论空间。我们会持续更新优化说明、
 测试结果和兼容工作，是否公开将在之后决定。

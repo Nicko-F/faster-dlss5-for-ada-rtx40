@@ -1,4 +1,4 @@
-# v0.2 validation scope
+# Automatic-dimension draft validation scope
 
 September 10, 2026. Packaging and correctness checks are separate from performance
 measurements and from permission to redistribute the local GPU files.
@@ -16,14 +16,14 @@ measurements and from permission to redistribute the local GPU files.
 - Windows PowerShell 5.1 manager fixtures cover automatic installation, mixed-size
   status logs, pinned manifest/addon identities, exact file sets, missing payload,
   collisions, tampered files, stale/partial logs, state-only recovery, moved/lost
-  packages, record-only recovery and removal of known v0.1 installations.
+  packages, record-only recovery and removal of known fixed-size draft installations.
 - Fixture tests mock hardware/process checks and use dummy files; they do not
   prove GPU execution. Production hardware and baseline guards remain enabled.
 - The final local bundle also passed install/remove against an isolated copy of
   the real matching game/community files, with production GPU/driver checks enabled.
   Base hashes were preserved. This placement test did not launch the game.
-- Original NR/game timing arithmetic is rechecked without relabeling its v0.1
-  measurements as v0.2 performance. No new game benchmark is reported here.
+- Original NR/game timing arithmetic is rechecked without relabeling its fixed-size draft
+  measurements as automatic-dimension draft performance. No new game benchmark is reported here.
 - Source packaging has an explicit allowlist and rejects vendor instruction/GPU
   files, generated ABI headers, private folders and personal-path/token patterns.
   It verifies archive membership, content hashes and ZIP integrity. This is an

@@ -15,8 +15,8 @@ RenoDX style/preset 0、intensity 1，其他模式仍需验证。
 尺寸自动跟随原运行库，没有分辨率参数或宽高比选择，也无需因为改分辨率重新安装。
 详见[动态尺寸范围与验证](dynamic-dimensions.zh-CN.md)。
 
-1. 关闭游戏。已装 v0.1 的先选 **Remove**；v0.2 可识别旧安装记录并移除其插件。
-2. 将 v0.2 完整包解压到可写目录，并保留该目录。
+1. 关闭游戏。已装 此前固定尺寸草稿 的先选 **Remove**；当前自动尺寸草稿 可识别旧安装记录并移除其插件。
+2. 将 当前自动尺寸草稿 完整包解压到可写目录，并保留该目录。
 3. 双击 **Start.cmd**，选 **Check compatibility**，输入游戏目录。
 4. 选 **Install**，再选 **Launch**。在游戏内正常选择分辨率。
 5. 退出游戏后选 **Verify latest run**，核对日志里的实际 NR 尺寸、替换次数和错误计数。
@@ -41,5 +41,5 @@ Launch、Status 需要原解压目录。目录丢失或移动后，另一份完�
 身份移除安装，而不依赖旧内核。未知或被修改的插件不会被覆盖或悄悄删除。
 `-Action Remove -ForgetRecordOnly` 只清除记录并保留插件文件，不等于卸载该文件。
 
-`compatibility/automatic.lock.json` 固定 v0.2 身份，旧锁文件仅用于卸载 v0.1。
+`compatibility/automatic.lock.json` 固定 当前自动尺寸草稿 身份，旧锁文件仅用于卸载 此前固定尺寸草稿。
 校验值用于发现文件变化，不是独立的发行方认证；请从项目所有者取得完整包。

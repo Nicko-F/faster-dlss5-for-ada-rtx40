@@ -1,6 +1,8 @@
-# v0.2.0 — automatic native dimensions, private preview
+# Unreleased draft — first release pending
 
-[中文发布说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/RELEASE_NOTES.zh-CN.md)
+No first release has been made. The owner will decide when to publish and assign a version.
+
+[中文发布说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/docs/draft-notes.zh-CN.md)
 
 Install once.
 
@@ -14,14 +16,14 @@ known-size fast paths remain automatic. Status reports actual observed NR sizes.
 
 Separate community/optimized process checks compare final images after three
 frames, including static, motion and one NR+SR case. These are correctness checks;
-the published timing tables remain the frozen v0.1 results. No new game benchmark
+the published timing tables remain the frozen fixed-size draft results. No new game benchmark
 or general performance percentage is claimed. See the dynamic-dimension report.
 
-This repository and release stay **private**, with Issues and Discussions for
-invited collaborators. The attached SOURCE-PREVIEW contains bilingual docs,
+This development draft stays **private**, with Issues and Discussions for
+invited collaborators. The local SOURCE-PREVIEW archive contains bilingual docs,
 manager source, checks and results, **no accelerator kernels or implementation**.
-The full v0.2 bundle stays local; GPU redistribution permission is unresolved.
+The full automatic-dimension draft bundle stays local; GPU redistribution permission is unresolved.
 
-The manager preserves known-addon-only removal, including v0.1 recovery. Hardware,
+The manager preserves known-addon-only removal, including fixed-size draft recovery. Hardware,
 runtime identity and supported-mode checks remain; dimension support does not
 automatically validate other GPUs, drivers, games, HDR or dynamic-resolution modes.

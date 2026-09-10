@@ -12,7 +12,7 @@ PRIVATE = re.compile(r'C:[/\\]+Users[/\\]+|E:[/\\]+SteamLibrary[/\\]+|gh[pousr]_
 
 
 def audit(root=ROOT):
-    names = json.loads((root/'public-files.json').read_text(encoding='utf-8'))['files']
+    names = json.loads((root/'tools/source-files.json').read_text(encoding='utf-8'))['files']
     if len(names) != len(set(names)):
         raise ValueError('Duplicate allowlist entry')
     payload = {}
@@ -37,7 +37,7 @@ def audit(root=ROOT):
 
 def main():
     payload = audit()
-    target = ROOT/'dist/Faster-DLSS5-Ada-SOURCE-PREVIEW-v0.2.0.zip'
+    target = ROOT/'dist/Faster-DLSS5-Ada-SOURCE-PREVIEW-UNRELEASED-20260910.zip'
     target.parent.mkdir(exist_ok=True)
     hashes = {k: hashlib.sha256(v).hexdigest() for k,v in payload.items()}
     payload['SOURCE-MANIFEST.json'] = (json.dumps(dict(schemaVersion=1,

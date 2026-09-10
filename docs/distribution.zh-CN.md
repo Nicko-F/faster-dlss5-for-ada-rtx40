@@ -1,6 +1,6 @@
 # 分发状态
 
-[English](distribution.md) · [中文主页](../README.zh-CN.md)
+[English](distribution.md) · [中文主页](../README.md#chinese)
 
 当前按维护者要求放在 **Private 仓库审阅**。原创管理与分析工具、文档、汇总测量和兼容身份
 按明确文件白名单整理，没有复制原研究仓库的提交历史。

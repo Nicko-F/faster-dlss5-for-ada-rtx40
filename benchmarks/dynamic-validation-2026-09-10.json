@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0",
+  "buildLabel": "2026-09-10-native-dimensions",
+  "releaseStatus": "unreleased",
   "status": "passed-final-image-and-routing-checks",
   "gpu": "RTX 4080",
   "driver": "616.56",

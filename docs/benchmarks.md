@@ -1,6 +1,6 @@
 # Measurement protocol and reproducible arithmetic
 
-These measurements belong to the frozen v0.1 builds. v0.2 automatic-dimension correctness checks are recorded separately; these tables are not a new benchmark of v0.2.
+These measurements belong to the frozen fixed-size draft builds. Correctness checks for the automatic-dimension draft are recorded separately; these tables are not a new benchmark of automatic-dimension draft.
 
 [中文](benchmarks.zh-CN.md)
 

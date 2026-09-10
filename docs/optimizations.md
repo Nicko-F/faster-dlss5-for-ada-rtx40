@@ -70,7 +70,7 @@ have different work-to-overhead ratios; they remain active optimization targets.
 ## Pre/Post and automatic dimensions
 
 The integrated selection replaces 145 interior calls, plus two supported temporal
-Pre/Post calls. No-history graphs keep native Pre/Post. v0.2 uses one bundle,
+Pre/Post calls. No-history graphs keep native Pre/Post. The automatic-dimension draft uses one bundle,
 preserves native dimensions and adds general variants for four previously
 dimension-folded sites. Exact known-size fast paths are selected automatically.
 The installer never chooses image partitions. [Design and validation](dynamic-dimensions.md).
