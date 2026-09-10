@@ -329,17 +329,66 @@ Their local load/store instructions also disappear without additional shared
 allocation. These changes remove the corresponding spill requirement; Section 6
 addresses selecting storage for remaining spills.
 
-### 4.5 Select register budgets together with residency
+### 4.5 Deliberately lower the register budget: accept spills for more CTA capacity
 
-A cap constrains compilation; actual allocation can be lower. The selected 512 FFN
-has a 128-register cap but uses 118 registers with zero stack. Other kernels retain
-some spill in exchange for lower per-thread allocation. In Section 2's capacity
-model, a 256-thread CTA has a register-only bound of one resident CTA at 168
-registers/thread and two at 128. Other resource limits still constrain residency.
+**Another adopted route lowers the per-thread register cap, accepting local spills
+when the resulting execution organization is faster overall.** It can work with
+no increase in shared-memory allocation.
 
-We therefore tune load placement, fragment reuse and register budgets together:
-remove unnecessary live-range overlap, retain worthwhile reuse, then use
-complete-kernel time to balance remaining spill costs against active-warp capacity.
+An SM's register resources are allocated across resident blocks. High per-thread
+allocation can let one CTA consume enough registers to exclude another. If that
+CTA's warps wait together on texture, memory or matrix dependencies, the scheduler
+has fewer ready alternatives. Lower allocation that crosses a CTA-capacity threshold
+can supply more independent warps to fill those gaps. Additional spills cost work,
+but the reduction in unhidden waiting can outweigh that cost.
+[NVIDIA: register pressure, occupancy and latency hiding](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html)
+
+**The 256 chained kernel is a concrete example.** It retains the original
+`32 × 8 × 1`, 256-thread CTA while reducing the register budget from 168 to 128.
+For 65,536 registers per SM:
+
+| Registers/thread | Registers/CTA before allocation granularity | Register-only CTA/SM bound | Corresponding warps/SM |
+|---|---:|---:|---:|
+| 168 | 43,008 | 1 | 8 |
+| 128 | 32,768 | 2 | 16 |
+
+CUDA capacity queries for this sample also return **1 → 2 CTAs/SM and 8 → 16
+warps/SM**. The selected implementation uses 128 registers and 16,384 bytes of
+shared memory, retaining a **64-byte local stack** and reported spill stores/loads
+of **100 / 76 bytes**. Shared allocation does not increase; local spills remain.
+The N64 input-reuse plus 128-register combination reduces summed local replay time
+across all 12 call sites by **17.85% / 18.92%** against community in two campaigns.
+Those gains belong to the complete combination.
+
+The increase is in **capacity for simultaneously resident CTAs**. Grid and runtime
+threads per CTA remain unchanged; the GPU schedules their execution. Capacity
+queries are not achieved-residency samples and do not attribute the entire gain
+to the CTA count alone.
+
+**Temporal Pre demonstrates accepting spills from a zero-stack starting point:**
+
+| Compilation policy with original sampling order | Actual registers/thread | Local stack | Shared/CTA |
+|---|---:|---:|---:|
+| 168-register control | 168 | 0 B | 2,048 B |
+| Retained 128-register implementation | 128 | 80 B | 2,048 B |
+
+The retained implementation keeps the sampling order and 32-thread CTA while
+accepting new local spills. Complete-Pre local time on history frames falls by
+**6.60–9.82%** against community, without moving spills into shared memory. Resource
+and timing results support this budget choice; dynamic residency and latency-hiding
+contributions have not been measured separately.
+
+Register optimization therefore involves three distinct interventions:
+
+| Method | Target | Examples in this report |
+|---|---|---|
+| Shorten live ranges | Reduce spill/reload under the same budget | QKV and 512 projections |
+| Lower the register budget | Accept some spill to improve CTA/warp capacity and scheduling | 256 chained, temporal Pre |
+| Select spill storage | Reduce access costs for remaining spills | Section 6 shared spilling, temporal Post |
+
+A register cap still differs from actual allocation: the selected 512 FFN has a
+128-register cap but uses 118 registers with zero stack. Complete-kernel time decides
+the selection, rather than uniformly maximizing registers or CTAs, or requiring zero stack.
 
 ## 5. Fused FFN, projection and boundary scheduling
 
