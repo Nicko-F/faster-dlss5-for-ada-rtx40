@@ -37,7 +37,7 @@ def audit(root=ROOT):
 
 def main():
     payload = audit()
-    target = ROOT/'dist/Faster-DLSS5-Ada-SOURCE-PREVIEW-2026-09-10.zip'
+    target = ROOT/'dist/Faster-DLSS5-Ada-SOURCE-PREVIEW-v0.2.0.zip'
     target.parent.mkdir(exist_ok=True)
     hashes = {k: hashlib.sha256(v).hexdigest() for k,v in payload.items()}
     payload['SOURCE-MANIFEST.json'] = (json.dumps(dict(schemaVersion=1,

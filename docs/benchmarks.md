@@ -1,5 +1,7 @@
 # Measurement protocol and reproducible arithmetic
 
+These measurements belong to the frozen v0.1 builds. v0.2 automatic-dimension correctness checks are recorded separately; these tables are not a new benchmark of v0.2.
+
 [中文](benchmarks.zh-CN.md)
 
 The [JSON dataset](../benchmarks/results-2026-09-10.json) includes every per-run

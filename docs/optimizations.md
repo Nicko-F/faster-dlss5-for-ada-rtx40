@@ -67,18 +67,17 @@ ViT and decoder stages. We avoid claiming that every fused stage now has its bes
 possible Ada implementation. The smaller 128/64/32 stages and lower resolutions
 have different work-to-overhead ratios; they remain active optimization targets.
 
-## Pre/Post and resolution profiles
+## Pre/Post and automatic dimensions
 
-The current integrated selection replaces 145 buffer calls in a matching observed
-graph, plus two Pre/Post calls when temporal inputs are available. Startup or
-no-history graphs keep the original Pre/Post path. The two smaller resolutions
-use dedicated compiled profiles, including shape-specific choices; passing a
-different resolution into an arbitrary 4K replacement is not sufficient.
+The integrated selection replaces 145 interior calls, plus two supported temporal
+Pre/Post calls. No-history graphs keep native Pre/Post. v0.2 uses one bundle,
+preserves native dimensions and adds general variants for four previously
+dimension-folded sites. Exact known-size fast paths are selected automatically.
+The installer never chooses image partitions. [Design and validation](dynamic-dimensions.md).
 
-Runtime, shape, launch and output-format guards restrict substitution. The public
-manager additionally checks the exact measured community binaries and the tested
-GPU/driver before installing. Routing evidence shows which path ran; it does not
-establish temporal image quality or measure isolated GPU time.
+Runtime identity, invariant scalar, shape, launch and format guards restrict
+substitution. Unsupported contracts retain their native function. The manager
+also checks the tested hardware/base and reports routing, not GPU time or quality.
 
 ## What is not claimed
 

@@ -1,38 +1,33 @@
-# Release preparation checks
+# v0.2 validation scope
 
-Date: September 10, 2026. This records packaging validation, not a new performance
-benchmark and not permission to redistribute the local GPU binaries.
+September 10, 2026. Packaging and correctness checks are separate from performance
+measurements and from permission to redistribute the local GPU files.
 
-- The measured two-run NR and game results were exported through an explicit
-  field selection. The calculation tool reproduces every displayed table.
-- Windows PowerShell 5.1 fixture tests cover installation, duplicate-install
-  refusal, preservation of an unknown modified addon, normal removal, recovery
-  with damaged payload files, baseline preservation, missing payloads, path
-  traversal refusal, clean/partial routing logs and stale launch evidence.
-- Tests also reject unpinned manifests and missing/extra/non-contiguous file sets,
-  require the expected refusal reason, and cover state-only interrupted installs,
-  a moved/lost package, invalid state identities, and explicit record-only recovery
-  that preserves unknown files. The shipped compatibility lock binds profiles to
-  the exact identities checked against accepted game runs.
-- Fixture tests use dummy files and mocked hardware/process checks; they do not
-  demonstrate a game run or GPU correctness. Production hardware guards remain
-  enabled in the manager.
-- Each full local profile's addon and every compiled GPU file were checked
-  against both its selection/build manifest and two accepted game runs from the
-  earlier benchmark cohorts. Those cohorts have zero bad observed graphs.
-- All three profiles passed installation and removal against an isolated copy
-  of the real matching game/community files, with the production RTX 4080 /
-  driver 616.56 checks enabled. Original file hashes were preserved. This checks
-  real binary placement and recovery; no new game was launched in this test.
-- The local package contains 45 / 45 / 41 GPU files for 1080p / 1440p / 4K,
-  including two Pre/Post files per profile. They remain outside the public tree.
-- Public source packaging uses public-files.json; extracted instructions,
-  executable binaries, generated vendor ABI headers and private repository
-  directories are forbidden. It checks private-path/token patterns, archive
-  membership, per-file hashes and ZIP integrity. This is an engineering audit,
-  not a general legal certification.
-
-Re-run the public checks:
+- Native synthetic route tests check automatic selection, negative guards and
+  unchanged caller descriptors/parameter blocks. These tests use generated shapes
+  and are plumbing coverage, not independent proof of native dimension semantics.
+- 580 recorded native interior-call contracts across four sizes were checked
+  against the generated dimension guards.
+- Real community and optimized GPU processes check static, motion and NR+SR
+  final images. See [dynamic dimension scope](dynamic-dimensions.md) and its exported
+  validation receipt. Final-image equality does not mean every tensor was compared.
+- The build checks the required Evaluate forwarding convention and runs legacy
+  route regression tests. Vendor ABI and GPU code stay in the private workspace.
+- Windows PowerShell 5.1 manager fixtures cover automatic installation, mixed-size
+  status logs, pinned manifest/addon identities, exact file sets, missing payload,
+  collisions, tampered files, stale/partial logs, state-only recovery, moved/lost
+  packages, record-only recovery and removal of known v0.1 installations.
+- Fixture tests mock hardware/process checks and use dummy files; they do not
+  prove GPU execution. Production hardware and baseline guards remain enabled.
+- The final local bundle also passed install/remove against an isolated copy of
+  the real matching game/community files, with production GPU/driver checks enabled.
+  Base hashes were preserved. This placement test did not launch the game.
+- Original NR/game timing arithmetic is rechecked without relabeling its v0.1
+  measurements as v0.2 performance. No new game benchmark is reported here.
+- Source packaging has an explicit allowlist and rejects vendor instruction/GPU
+  files, generated ABI headers, private folders and personal-path/token patterns.
+  It verifies archive membership, content hashes and ZIP integrity. This is an
+  engineering review, not a general legal certification.
 
 ```powershell
 powershell.exe -NoProfile -File tests/manager.Tests.ps1
@@ -41,6 +36,5 @@ python tools/report_results.py
 python tools/package_preview.py
 ```
 
-Use Python 3.9+ for the arithmetic tool and Python 3.9+ for packaging. The package
-manager itself does not require Python. The V1 header in include/ documents the
-authored host interface only; no accelerator implementation is included here.
+The manager needs no Python. Arithmetic and packaging tools require Python 3.9+.
+The authored V1 API declaration is documentation, not an accelerator implementation.

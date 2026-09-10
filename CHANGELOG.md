@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 automatic dimensions — private review, 2026-09-10
+
+- One installation, native runtime dimensions, no resolution selector.
+- General variants for four dimension-folded sites; automatic exact-size fast paths.
+- 16:10, ultrawide, odd-size, motion and NR+SR correctness checks.
+- Status accepts mixed observed sizes; known v0.1 installations remain removable.
+- Existing timing tables remain v0.1; no new performance benchmark.
+
+
 ## 0.1.0 source preview — private review, 2026-09-10
 
 - English and Chinese project pages with explicit community baseline credits.

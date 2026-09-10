@@ -4,21 +4,30 @@
 
 [中文](README.zh-CN.md) · [How it works](docs/optimizations.md) · [Measurements](docs/benchmarks.md) · [Install guide](docs/install.md) · [Roadmap](ROADMAP.md)
 
-On our RTX 4080, the current experimental build reduces **4K neural-network GPU time by 8.16% in independent runs and 10.30% in interleaved runs**. In Cyberpunk 2077, the same optimization line improves **4K average FPS by 4.20%** over our pinned community baseline.
+On our RTX 4080, the measured v0.1 experimental build reduces **4K neural-network GPU time by 8.16% in independent runs and 10.30% in interleaved runs**. In Cyberpunk 2077, the same optimization line improves **4K average FPS by 4.20%** over our pinned community baseline.
 
 **Release status: private review repository; source and tooling preview.** The complete accelerator has been assembled for local testing. Its optimized GPU binaries are derived from NVIDIA-origin code; redistribution permission has not been established, so they are **not included in this public source tree**. Downloading this preview alone does not enable acceleration. See [release contents and permission status](docs/distribution.md). There is no public ready-to-use accelerator release yet.
 
 ## What we improve
 
+**An acceleration patch on top of a working community base.** We do not replace
+the base's compatibility implementation. Keep its runtime, model, game insertion,
+resource setup and resolution handling. The complete local patch adds only our
+addon and selected optimized kernels; unsupported optimization contracts retain
+the corresponding base calls. Compatibility work here covers the patch's own
+execution requirements, not every issue in the community stack.
+
 - **Asynchronous data movement:** preserve useful producer/consumer overlap when adapting bulk-copy paths to Ada, instead of introducing unnecessary waits at each copy. Synchronization still protects every dependency.
 - **Register pressure and spills:** schedule fragment loads near their use, shorten live ranges, and tune register budgets in fused projections, attention and FFN stages. Some audited projections eliminate their local stack traffic.
 - **Uniform/scalar lowering differences:** adaptation can move work into general registers and increase pressure. This is one observed contributor, not proof that RTX 40 lacks uniform registers or that every spill comes from this difference.
-- **Shared memory and stage scheduling:** retain measured shared-memory spill/staging improvements and resolution-specific execution choices. We do not move all spills into shared memory indiscriminately.
+- **Shared memory and stage scheduling:** retain measured shared-memory spill/staging improvements and automatic execution choices based on native layer dimensions. We do not move all spills into shared memory indiscriminately.
 - **Guarded Pre/Post integration:** add preprocessing and postprocessing improvements where the exact shape, format and temporal-history requirements match.
 
 The objective is to preserve NVIDIA's mathematics and data dependencies while organizing execution for Ada. Reported timings concern the measured experimental builds; they do not promise a fixed gain on every card, scene or game. [Technical explanation](docs/optimizations.md).
 
 ## Results
+
+These timing tables describe the frozen v0.1 builds. v0.2 adds automatic dimension handling and has separate correctness validation; it has not received a new game or performance benchmark.
 
 RTX 4080, driver 616.56, Ryzen 9 9950X. Lower is better for milliseconds. Pure NR uses fixed synthetic model1/sRGB inputs, 100 warmup + 400 measured frames. Each row aggregates two runs; methods remain separate.
 
@@ -64,13 +73,13 @@ The laboratory work used [kibblerz/DLSS5-Reshade-AIO](https://github.com/kibbler
 
 The public tools require Windows PowerShell 5.1, already present on the tested Windows system. Run `Start.cmd` to open the manager. It can inspect a matching installation; **Install and Launch require a complete acceleration payload**, which this source preview does not provide.
 
-The local complete package offers three profiles: 1920×1080, 2560×1440 and 3840×2160. It checks hashes, refuses unknown existing addon files, launches with process-local settings, verifies routing logs and removes only its own installation. [Step-by-step guide](docs/install.md).
+The v0.2 local package installs once and follows the native runtime dimensions automatically, including 16:10 and ultrawide shapes. There is no resolution selector. DLSS5 still owns partitioning, padding and launch parameters; the optimizer changes the selected GPU function only. The tested sizes are validation samples, not a whitelist. [Dynamic dimension validation](docs/dynamic-dimensions.md). It checks hashes, refuses unknown existing addon files, launches with process-local settings, verifies routing logs and removes only its own installation. [Step-by-step guide](docs/install.md).
 
 Validated target: RTX 4080 / driver 616.56 / Cyberpunk 2077 2.31. Other RTX 40 cards, newer drivers, HDR, RT/PT/FG combinations and other games are future validation targets. The manager intentionally stops on unvalidated hardware or binary identities. Keep a working community installation; no runtime, model weights or proprietary addon is bundled or automatically fetched.
 
 ## Discussion and continuing development
 
-We intend to continue publishing new optimizations, measured results, compatibility profiles and release notes. We welcome benchmark reports, questions, reproducibility checks and contributions. The [roadmap](ROADMAP.md) records what is measured and what remains open; we do not promise a fixed release cadence or universal percentage gain.
+We intend to continue publishing new optimizations, measured results, compatibility updates and release notes. We welcome benchmark reports, questions, reproducibility checks and contributions. The [roadmap](ROADMAP.md) records what is measured and what remains open; we do not promise a fixed release cadence or universal percentage gain.
 
 The repository is private. [Issues](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues) and [Discussions](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/discussions) are enabled for collaborators with repository access. Public publication remains a future decision. Please do not attach proprietary kernels, runtime DLLs, model weights, game resources or logs containing personal paths. Use the included [benchmark report template](.github/ISSUE_TEMPLATE/benchmark.yml).
 

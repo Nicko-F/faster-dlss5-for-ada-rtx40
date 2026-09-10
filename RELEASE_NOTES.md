@@ -1,31 +1,27 @@
-# v0.1.0 — private source and results preview
+# v0.2.0 — automatic native dimensions, private preview
 
 [中文发布说明](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/blob/main/RELEASE_NOTES.zh-CN.md)
 
-This repository and release are **private for review**, following the owner's
-latest instruction. Issues and Discussions are enabled for invited collaborators.
-No public announcement or public accelerator release is being made.
+Install once.
 
-Included: English/Chinese overview, detailed optimization explanation, exact
-community base identities, per-run benchmark summaries, table calculator, original
-Windows package manager, API declaration, tests and source-package audit.
+This is an incremental acceleration patch for a working community base; the base
+retains runtime, model, game insertion and resolution responsibilities.
 
-Current RTX 4080 measurements:
+No 1080p / 1440p / 4K choice is needed. The local accelerator follows
+DLSS5's incoming network dimensions, padding and launches, including checked 16:10
+and ultrawide cases. Four previously size-folded call sites gain general variants;
+known-size fast paths remain automatic. Status reports actual observed NR sizes.
 
-- 4K pure NR: 18.2810 → 16.7892 ms independently (−8.16%); interleaved
-  17.6821 → 15.8614 ms (−10.30%).
-- Cyberpunk 2077 4K: community 31.08 → optimized 32.38 FPS (+4.20%).
-- 4K DLSS5 added whole-frame cost: 16.714 → 15.416 ms (−7.77%).
+Separate community/optimized process checks compare final images after three
+frames, including static, motion and one NR+SR case. These are correctness checks;
+the published timing tables remain the frozen v0.1 results. No new game benchmark
+or general performance percentage is claimed. See the dynamic-dimension report.
 
-The 5070 Ti's externally reported 17.0 ms comes from NBA 2K27 official integration.
-It is a contextual reference, not a matched cross-GPU comparison. 1080p and 1440p
-results and measurement limitations are in the README and dataset.
+This repository and release stay **private**, with Issues and Discussions for
+invited collaborators. The attached SOURCE-PREVIEW contains bilingual docs,
+manager source, checks and results, **no accelerator kernels or implementation**.
+The full v0.2 bundle stays local; GPU redistribution permission is unresolved.
 
-**The attached SOURCE-PREVIEW ZIP contains no acceleration kernels.** Install and
-Launch need a complete payload, currently kept local because redistribution
-permission for the vendor-derived GPU code has not been established. Do not
-describe this download as a working standalone accelerator.
-
-The complete local package has three exact tested resolution profiles and a
-reversible manager. It is not uploaded to this repository or attached here, so
-this repository remains suitable for later public-source review.
+The manager preserves known-addon-only removal, including v0.1 recovery. Hardware,
+runtime identity and supported-mode checks remain; dimension support does not
+automatically validate other GPUs, drivers, games, HDR or dynamic-resolution modes.

@@ -2,7 +2,6 @@
 param(
     [ValidateSet('Menu','Check','Install','Launch','Status','Remove')][string]$Action='Menu',
     [string]$GamePath,
-    [ValidateSet('1920x1080','2560x1440','3840x2160')][string]$Resolution='3840x2160',
     [switch]$ForgetRecordOnly
 )
 $ErrorActionPreference='Stop'
@@ -55,7 +54,7 @@ function Assert-Hardware {
         throw 'Validated target: RTX 4080 / driver 616.56. Other RTX 40 GPUs and newer drivers need separate validation.'
     }
 }
-function Get-ProfileLock([string]$Id) {
+function Get-LegacyProfileLock([string]$Id) {
     if($Id -notin @('1920x1080','2560x1440','3840x2160')){throw 'Unsupported profile.'}
     $lock=Read-Json (Join-Path $PackageRoot 'compatibility/profiles.lock.json')
     $entry=$lock.profiles.$Id
@@ -66,9 +65,16 @@ function Get-ProfileLock([string]$Id) {
     }
     return $entry
 }
-function Get-Profile([string]$Id,[bool]$VerifyPayload=$true) {
-    $lock=Get-ProfileLock $Id
-    $dir=Join-Path $PackageRoot "profiles/$Id"
+function Get-ProfileLock {
+    $lock=Read-Json (Join-Path $PackageRoot 'compatibility/automatic.lock.json')
+    if($lock.schemaVersion -ne 2 -or $lock.profileId -ne 'native-dimension-v1' -or
+       $lock.integratedCount -ne 45 -or $lock.manifestSha256 -notmatch '^[a-f0-9]{64}$' -or
+       $lock.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid automatic-payload lock.'}
+    return $lock
+}
+function Get-Profile([bool]$VerifyPayload=$true) {
+    $lock=Get-ProfileLock
+    $dir=Join-Path $PackageRoot 'profiles/automatic'
     $path=Join-Path $dir 'manifest.json'
     if(-not (Test-Path -LiteralPath $path)) {
         throw 'Acceleration payload is not included in the public source preview. Install/Launch require the complete local package; this download alone does not accelerate DLSS5.'
@@ -76,7 +82,7 @@ function Get-Profile([string]$Id,[bool]$VerifyPayload=$true) {
     Assert-PlainPath $dir
     if((Get-Sha $path) -ne $lock.manifestSha256){throw 'Profile manifest is not the pinned tested identity.'}
     $manifest=Read-Json $path
-    if($manifest.schemaVersion -ne 1 -or $manifest.resolution -ne $Id -or $manifest.mode -ne 2){throw 'Invalid profile manifest.'}
+    if($manifest.schemaVersion -ne 2 -or $manifest.profileId -ne 'native-dimension-v1' -or $manifest.mode -ne 2){throw 'Invalid profile manifest.'}
     $names=@($manifest.files.PSObject.Properties.Name)
     $expected=@('ada-nr.addon64','bundle/mode.txt','bundle/frontback-pre.cubin','bundle/frontback-post.cubin')
     $expected+=@(0..($lock.integratedCount-1) | ForEach-Object {'bundle/integrated-{0:d2}.cubin' -f $_})
@@ -96,26 +102,26 @@ function Get-Profile([string]$Id,[bool]$VerifyPayload=$true) {
     if($VerifyPayload -and (Get-Content -LiteralPath (Join-Path $dir 'bundle/mode.txt') -Raw).Trim() -ne '2'){throw 'Expected optimized mode 2.'}
     return @{root=$dir; manifest=$manifest; sha=$manifest.files.'ada-nr.addon64'}
 }
-function Install-Profile([string]$Bin,[string]$Id) {
+function Install-Profile([string]$Bin) {
     Assert-GameClosed; Assert-Baseline $Bin; Assert-Hardware
-    $profile=Get-Profile $Id
+    $profile=Get-Profile
     $target=Join-Path $Bin 'ada-nr.addon64'
     $statePath=Join-Path $Bin 'faster-dlss5-install.json'
     if((Test-Path -LiteralPath $target) -or (Test-Path -LiteralPath $statePath)) {
-        throw 'An addon or installation record already exists. Remove this installation before changing profiles. Unknown files are never overwritten.'
+        throw 'An addon or installation record already exists. Remove this installation before installing this version. Unknown files are never overwritten.'
     }
-    $state=[ordered]@{schemaVersion=1;resolution=$Id;addonSha256=$profile.sha;packageRoot=$PackageRoot;installedUtc=[DateTime]::UtcNow.ToString('o')}
+    $state=[ordered]@{schemaVersion=2;profileId='native-dimension-v1';addonSha256=$profile.sha;packageRoot=$PackageRoot;installedUtc=[DateTime]::UtcNow.ToString('o')}
     # Persist intent first. CreateNew and File.Copy(overwrite=false) protect existing files.
     $stream=[IO.File]::Open($statePath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
     try {$bytes=[Text.Encoding]::UTF8.GetBytes(($state | ConvertTo-Json));$stream.Write($bytes,0,$bytes.Length)} finally {$stream.Dispose()}
     [IO.File]::Copy((Join-Path $profile.root 'ada-nr.addon64'),$target,$false)
     if((Get-Sha $target) -ne $profile.sha){throw 'Installed addon hash mismatch; retain the record for recovery.'}
-    Write-Host "Installed $Id. Keep this extracted package in place. Launch through this manager."
+    Write-Host "Installed automatic dimension support. Keep this extracted package in place. Launch through this manager."
 }
 function Get-Installation([string]$Bin,[bool]$VerifyPayload=$true) {
     $state=Read-Json (Join-Path $Bin 'faster-dlss5-install.json')
-    if($state.schemaVersion -ne 1 -or $state.packageRoot -ne $PackageRoot){throw 'Installation belongs to a different package location.'}
-    $profile=Get-Profile $state.resolution $VerifyPayload
+    if($state.schemaVersion -ne 2 -or $state.profileId -ne 'native-dimension-v1' -or $state.packageRoot -ne $PackageRoot){throw 'Installation belongs to a different package location.'}
+    $profile=Get-Profile $VerifyPayload
     if($state.addonSha256 -ne $profile.sha){throw 'Installation record does not match this package.'}
     return @{state=$state;profile=$profile}
 }
@@ -124,8 +130,11 @@ function Remove-Profile([string]$Bin,[bool]$RecordOnly=$false) {
     $statePath=Join-Path $Bin 'faster-dlss5-install.json'
     Assert-PlainPath $statePath
     $state=Read-Json $statePath
-    if($state.schemaVersion -ne 1 -or $state.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid installation record.'}
-    $lock=Get-ProfileLock $state.resolution
+    if($state.schemaVersion -notin @(1,2) -or $state.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid installation record.'}
+    $lock=if($state.schemaVersion -eq 1){Get-LegacyProfileLock $state.resolution}else{
+        if($state.profileId -ne 'native-dimension-v1'){throw 'Invalid installation record.'}
+        Get-ProfileLock
+    }
     if($state.addonSha256 -ne $lock.addonSha256){throw 'Installation record is not a known addon identity.'}
     $target=Join-Path $Bin 'ada-nr.addon64'
     Assert-PlainPath $target
@@ -157,14 +166,16 @@ function Show-Status([string]$Bin) {
         throw 'The latest launch has no clean optimizer hook evidence. See its event log.'
     }
     $rows=@(Import-Csv -LiteralPath $frames)
-    $size=$install.state.resolution.Split('x')
+    $observed=@($rows | ForEach-Object {"$($_.width)x$($_.height)"} | Sort-Object -Unique)
     $bad=@($rows | Where-Object {
         $_.optimized -ne '1' -or $_.replaced -ne '145' -or $_.guard_failed -ne '0' -or $_.launch_errors -ne '0' -or
-        $_.surface_failed -ne '0' -or $_.width -ne $size[0] -or $_.height -ne $size[1] -or
+        $_.surface_failed -ne '0' -or $_.width -notmatch '^[1-9][0-9]{0,4}$' -or
+        $_.height -notmatch '^[1-9][0-9]{0,4}$' -or [long]$_.width -gt 16384 -or [long]$_.height -gt 16384 -or
+        $_.output_format -notin @('28','10') -or
         -not (($_.frontback -eq '2' -and $_.history_native -eq '0') -or ($_.frontback -eq '0' -and $_.history_native -eq '2'))
     })
     if(-not $rows.Count -or $bad.Count){throw "Incomplete or failed routing evidence: $($bad.Count) bad / $($rows.Count) complete graphs."}
-    Write-Host "Latest launch: $($rows.Count) complete graphs passed routing checks ($($install.state.resolution)). This checks routing, not image quality or GPU time."
+    Write-Host "Latest launch: $($rows.Count) complete graphs passed routing checks (observed NR sizes: $($observed -join ", ")). This checks routing, not image quality or GPU time."
 }
 function Start-OptimizedGame([string]$Bin) {
     Assert-GameClosed; Assert-Baseline $Bin; Assert-Hardware
@@ -176,7 +187,7 @@ function Start-OptimizedGame([string]$Bin) {
     $start.FileName=Join-Path $Bin 'Cyberpunk2077.exe';$start.WorkingDirectory=$Bin;$start.UseShellExecute=$false
     $start.EnvironmentVariables['ADA_NR_BUNDLE']=$bundle
     $process=[Diagnostics.Process]::Start($start)
-    Write-Host "Game started (PID $($process.Id)). Use native $($install.state.resolution), SDR and the matching community NR settings."
+    Write-Host "Game started (PID $($process.Id)). Use SDR and the matching community NR settings. Dimensions follow the runtime automatically; there is no resolution profile to select."
     Write-Host 'After exiting the game, use Status to verify the optimizer actually ran.'
 }
 function Invoke-Manager {
@@ -187,12 +198,11 @@ function Invoke-Manager {
         $actions=@{'1'='Check';'2'='Install';'3'='Launch';'4'='Status';'5'='Remove'}
         if(-not $actions.ContainsKey($choice)){throw 'Invalid selection.'};$Action=$actions[$choice]
         $GamePath=Read-Host 'Cyberpunk 2077 installation folder (no quotes)'
-        if($Action -eq 'Install'){$Resolution=Read-Host 'Resolution: 1920x1080, 2560x1440 or 3840x2160'}
     }
     $bin=Get-GameBin $GamePath
     switch($Action) {
-        'Check' {Assert-Baseline $bin; Assert-Hardware; Write-Host 'The measured game baseline and hardware match.';Get-Profile $Resolution | Out-Null;Write-Host 'Acceleration payload verified.'}
-        'Install' {Install-Profile $bin $Resolution}
+        'Check' {Assert-Baseline $bin; Assert-Hardware; Write-Host 'The measured game baseline and hardware match.';Get-Profile | Out-Null;Write-Host 'Acceleration payload verified.'}
+        'Install' {Install-Profile $bin}
         'Launch' {Start-OptimizedGame $bin}
         'Status' {Show-Status $bin}
         'Remove' {Remove-Profile $bin ([bool]$ForgetRecordOnly)}

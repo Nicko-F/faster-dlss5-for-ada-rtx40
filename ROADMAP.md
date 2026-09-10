@@ -11,7 +11,8 @@ Performance targets are research goals, not promised results or delivery dates.
    and the game's variable FPS gain.
 4. Continue profiling data movement, register lifetimes, attention/FFN scheduling,
    and Pre/Post processing. Retain local wins, then evaluate integrated builds.
-5. Expand independent temporal/visual checks and longer game sessions.
+5. Extend automatic-dimension validation to longer game sessions, in-game size
+   changes and dynamic resolution; expand independent temporal/visual checks.
 6. Collect matched-game, matched-settings RTX 5070 Ti comparisons.
 
 ## Contribution policy
