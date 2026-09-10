@@ -19,8 +19,9 @@ specific substitutions can be used.
 - SDR, NR enabled, RenoDX style/preset 0 and intensity 1 as used in the measured
   game setup. Other modes still require validation.
 
-Dimensions follow the native runtime automatically. There is no resolution
-argument, aspect-ratio selector or requirement to reinstall after a size change.
+Resolution handling, partitioning and padding are existing base capabilities;
+the patch uses those native parameters. Installation requires no resolution choice
+or reinstall after a size change.
 See [scope and validation](dynamic-dimensions.md).
 
 ## Complete local package

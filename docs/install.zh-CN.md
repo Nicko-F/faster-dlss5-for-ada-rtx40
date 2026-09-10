@@ -12,7 +12,7 @@ Cyberpunk 2077 2.31。保留已正常工作的 ReShade 6.8.0 addon、RenoDX DLSS
 社区 NR 310.8.0 及其 Visual C++ 运行依赖。当前实测游戏设置为 SDR、NR 开启、
 RenoDX style/preset 0、intensity 1，其他模式仍需验证。
 
-尺寸自动跟随原运行库，没有分辨率参数或宽高比选择，也无需因为改分辨率重新安装。
+分辨率、分区与 padding 是 base 的既有能力，补丁沿用这些参数。安装时无需选择分辨率，改分辨率也无需重装。
 详见[动态尺寸范围与验证](dynamic-dimensions.zh-CN.md)。
 
 1. 关闭游戏。已装 此前固定尺寸草稿 的先选 **Remove**；当前自动尺寸草稿 可识别旧安装记录并移除其插件。

@@ -14,9 +14,8 @@
 - **异步搬运**：恢复计算与拷贝的重叠，减少不必要的等待。
 - **寄存器与 spill**：缩短变量活跃区间，将加载移近使用位置，减少栈访问。
 - **Shared memory 与调度**：改善 attention、FFN 和上下采样的片上数据复用。
-- **自动尺寸**：一次安装，沿用 DLSS5 的分区与 padding。16:10、超宽屏无需独立配置。
 
-base 继续负责模型、运行库和游戏接入；补丁增加优化插件与选用的加速内核。
+base 负责模型、运行库、游戏接入，以及分辨率、分区和 padding；补丁增加优化插件与选用的加速内核。
 
 ### 实测成绩
 
@@ -67,10 +66,9 @@ usage and fused-kernel scheduling for Ada.
 - **Asynchronous copies:** overlap transfers with computation and reduce unnecessary waits.
 - **Registers and spills:** shorten live ranges and load fragments closer to use.
 - **Shared memory and scheduling:** improve on-chip reuse in attention, FFN and sampling stages.
-- **Automatic dimensions:** install once and follow DLSS5's own partitioning and padding, including 16:10 and ultrawide shapes.
 
-The base supplies the model, runtime and game integration. The patch adds our
-optimizer addon and selected accelerated kernels.
+The base supplies the model, runtime, game integration, resolution handling,
+partitioning and padding. The patch adds our optimizer addon and selected accelerated kernels.
 
 ### Measured results
 
