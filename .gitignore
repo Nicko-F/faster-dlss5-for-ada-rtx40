@@ -1,0 +1,16 @@
+/profiles/
+/dist/
+/build/
+__pycache__/
+*.ptx
+*.sass
+*.cubin
+*.fatbin
+*.dll
+*.addon64
+*.exe
+*.zip
+*.7z
+*.bin
+*.log
+*.csv

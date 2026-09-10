@@ -1,0 +1,23 @@
+name: Benchmark or compatibility report
+description: Share all repeats and the exact environment; do not upload vendor files.
+title: "[Benchmark] GPU / resolution / game"
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: GPU, driver, OS, game version, resolution, graphics settings and community base identity.
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Measurements and method
+      description: Original, community and optimized results; all repeats, timing method and routing status. Remove personal paths.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Visual issues or failures
+      description: Describe the issue and reproduction steps. Do not attach proprietary kernels, runtime files or weights.

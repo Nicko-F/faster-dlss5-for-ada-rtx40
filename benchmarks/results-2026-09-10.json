@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-10",
+  "gpu": "RTX 4080",
+  "driver": "616.56",
+  "cpu": "Ryzen 9 9950X",
+  "game": "Cyberpunk 2077 2.31",
+  "settings": "High raster, native DLAA, SDR; RT/PT/RR/FG/DRS/Reflex/VSync/cap off",
+  "clockLocked": false,
+  "nrInput": "fixed synthetic model1/sRGB",
+  "warmupFrames": 100,
+  "measuredFrames": 400,
+  "nr": [
+    {
+      "resolution": "1920x1080",
+      "method": "independent-p50",
+      "communityMs": 4.813824,
+      "optimizedMs": 4.581887999999999
+    },
+    {
+      "resolution": "1920x1080",
+      "method": "independent-p50",
+      "communityMs": 4.818944,
+      "optimizedMs": 4.575232
+    },
+    {
+      "resolution": "1920x1080",
+      "method": "interleaved-mean",
+      "order": "prepost-abba",
+      "communityMs": 4.75651584,
+      "optimizedMs": 4.50296832
+    },
+    {
+      "resolution": "1920x1080",
+      "method": "interleaved-mean",
+      "order": "prepost-baab",
+      "communityMs": 4.75123712,
+      "optimizedMs": 4.49591776
+    },
+    {
+      "resolution": "2560x1440",
+      "method": "interleaved-mean",
+      "order": "prepost-abba",
+      "communityMs": 7.50370816,
+      "optimizedMs": 6.81933312
+    },
+    {
+      "resolution": "2560x1440",
+      "method": "interleaved-mean",
+      "order": "prepost-baab",
+      "communityMs": 7.51297024,
+      "optimizedMs": 6.829824
+    },
+    {
+      "resolution": "3840x2160",
+      "method": "independent-p50",
+      "order": "forward",
+      "communityMs": 18.287104,
+      "optimizedMs": 16.741888
+    },
+    {
+      "resolution": "3840x2160",
+      "method": "independent-p50",
+      "order": "reverse",
+      "communityMs": 18.274816,
+      "optimizedMs": 16.836608
+    },
+    {
+      "resolution": "3840x2160",
+      "method": "interleaved-mean",
+      "order": "prepost-abba",
+      "communityMs": 18.54917632,
+      "optimizedMs": 16.63913984
+    },
+    {
+      "resolution": "3840x2160",
+      "method": "interleaved-mean",
+      "order": "prepost-baab",
+      "communityMs": 16.81506752,
+      "optimizedMs": 15.083668
+    }
+  ],
+  "gameRuns": [
+    {
+      "resolution": "1920x1080",
+      "fps": {
+        "original": [
+          180.13270568847656,
+          179.0127410888672
+        ],
+        "community": [
+          92.28938293457031,
+          90.45510864257812
+        ],
+        "optimized": [
+          92.67362976074219,
+          92.5611343383789
+        ]
+      }
+    },
+    {
+      "resolution": "2560x1440",
+      "fps": {
+        "original": [
+          134.30799865722656,
+          135.25320434570312
+        ],
+        "community": [
+          66.75419616699219,
+          66.77762603759766
+        ],
+        "optimized": [
+          69.55883026123047,
+          69.44779968261719
+        ]
+      }
+    },
+    {
+      "resolution": "3840x2160",
+      "fps": {
+        "original": [
+          63.902000427246094,
+          65.4274673461914
+        ],
+        "community": [
+          31.08917236328125,
+          31.06100082397461
+        ],
+        "optimized": [
+          32.44028091430664,
+          32.322044372558594
+        ]
+      }
+    }
+  ],
+  "externalReference": {
+    "url": "https://www.techspot.com/article/3170-real-dlss-5-performance/",
+    "title": "Testing DLSS 5's Real Performance (No 6X Frame Gen)",
+    "publisher": "TechSpot",
+    "author": "Tim Schiesser",
+    "publishedDate": "2026-09-04",
+    "checkedDate": "2026-09-10",
+    "table": "Measured DLSS 5 Render Times",
+    "game": "NBA 2K27",
+    "integration": "official",
+    "gpu": "RTX 5070 Ti",
+    "method": "FPS on/off differences; some GPU settings increased to DLAA to avoid bottlenecks.",
+    "renderTimeMs": {
+      "1920x1080": null,
+      "2560x1440": 7.8,
+      "3840x2160": 17.0
+    },
+    "missing1080Reason": "The published render-time table does not include a 1080p row."
+  },
+  "controlledCrossGpuComparison": false,
+  "fullPublicInferenceReproductionAvailable": false,
+  "earlier1080GameFpsGainPercent": 0.4025110379754171,
+  "provenance": {
+    "lower-resolution-diagnosis-20260910": "4998d29878ef33c7203ef927aa72ec7005d09d5b2ac35b77f68cc402754a502a",
+    "game-resolution-adapted-20260910": "7bb2eeb1cb78be7308d7eb00959cf74c2b2e801914fa822c792d9701736c6005",
+    "game-three-versions-20260909": "3ff730bc11db4b239828e5f4fe486b5765c45401ba0bfaa5d7f1c598f4c3c649",
+    "ada-shared-convergence-nr-20260909": "f225349dafca0e6882d100cf28a96d6ba2721b7af6615e41bbda98e986f1eafc"
+  },
+  "limitations": [
+    "Two runs per role; separate complete cohorts for each resolution.",
+    "Interleaved runs share temporal history; correctness evidence was collected separately.",
+    "4K interleaved absolute times drifted; retain both runs.",
+    "1440p independent-process performance is not measured.",
+    "1080p game gains vary across repeats; no stable fixed percentage.",
+    "Public data reproduce arithmetic, not full inference without withheld GPU payloads."
+  ]
+}
