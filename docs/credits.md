@@ -14,6 +14,12 @@ RenoDX DLSS5 integration named above.
 
 **Model/runtime:** [NVIDIA DLSS](https://github.com/NVIDIA/DLSS).
 
+**Community architecture research:** [iamwavecut/MLX-DLSS](https://github.com/iamwavecut/MLX-DLSS).
+Its [model recovery notes](https://github.com/iamwavecut/MLX-DLSS/blob/main/docs/recovery-notes.md)
+and temporal processing reference provide architectural background for the
+[optimization report](optimizations.md). Our adapter and measurements use the
+RenoDX community base identified above.
+
 **External performance reference:** [TechSpot's DLSS5 measurements](https://www.techspot.com/article/3170-real-dlss-5-performance/)
 provide the attributed RTX 5070 Ti values.
 

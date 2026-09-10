@@ -2,6 +2,21 @@
 
 [简体中文](optimizations.zh-CN.md)
 
+## Abstract
+
+This report describes improving the community DLSS5 compatibility path on Ada
+while preserving numerical operations and data dependencies. The methods combine
+asynchronous-copy completion protocols, shorter register live ranges, input-fragment
+reuse inside fused FFNs, and joint selection of register budgets, shared spilling
+and block compilation constraints. Paired RTX 4080 measurements reduced pure NR
+time by **5.35% / 9.11% / 10.30%** at 1080p / 1440p / 4K; independent 4K processes
+measured **8.16%**. Section 9 gives the setup and game results.
+
+Sections 1–2 define scope and the cost model; Sections 3–7 develop the methods;
+Section 8 covers integration; Sections 9–10 present validation, results and next
+work. Hardware mechanisms cite NVIDIA documentation, model architecture cites
+community research, and resource/performance figures come from this project's records.
+
 ## 1. Objective and system boundary
 
 Faster DLSS5 is an Ada / RTX 40 acceleration patch for
@@ -16,11 +31,23 @@ network call sites. Original resource bindings, argument buffers and launch
 descriptors are forwarded. This lets a fused operator keep its external contract
 while changing how it stages and consumes values internally.
 
-The retained selection spans encoder, ViT, decoder and temporal Pre/Post work.
+For model architecture, we refer readers to the community project
+[MLX-DLSS](https://github.com/iamwavecut/MLX-DLSS) and its
+[model recovery notes](https://github.com/iamwavecut/MLX-DLSS/blob/main/docs/recovery-notes.md).
+Those notes discuss downsampling and decoder connections, attention/FFN organization,
+and a [temporal processing reference](https://github.com/iamwavecut/MLX-DLSS/blob/main/docs/recovery-notes.md#temporal-command-line-reference).
+We use encoder, ViT, decoder and temporal Pre/Post as names for the corresponding
+optimization regions below, focusing on how they execute on Ada.
+
+The retained selection spans these regions.
 One temporal graph can replace **145 interior calls plus two Pre/Post calls**.
 There are **45 interior binary variants and two surface kernels** in the bundle;
 variants and call sites are different counts because multiple calls reuse a
 binary and some shapes select a specialized variant.
+
+A CTA is a CUDA thread block; a warp contains 32 threads, each occupying a lane.
+MMA means matrix multiply-accumulate and FFN means feed-forward network. In the
+tiling discussion, N denotes output columns and K denotes the reduction dimension.
 
 ## 2. Cost model: why a compatible implementation can still be slower
 
@@ -45,37 +72,132 @@ Thus, more registers can remove spills while reducing the number of available
 warps. Our occupancy discussion uses this capacity model and compiled metadata;
 it is not a measurement of D3D command-list residency.
 
-## 3. Asynchronous copies and completion scheduling
+## 3. Asynchronous movement: Blackwell bulk copies to an Ada pipeline
 
-A bulk transfer adapted into smaller per-lane copies can lose overlap when a wait
-is placed directly after each copy group. The resulting execution is logically
-asynchronous but effectively serial along the critical path.
+### 3.1 Relevant architectural differences
 
-We preserve producer/consumer dependencies while moving completion waits to the
-actual consumption boundary. The retained experiments use per-lane 16-byte
-asynchronous copies and completion accounting. Independent arithmetic can execute
-between issuing a transfer and consuming its destination. Buffer reuse still waits
-for all readers and outstanding writes.
+The comparison here is GeForce RTX 50 Blackwell **compute capability 12.0 (sm_120)**
+versus RTX 40 Ada **compute capability 8.9 (sm_89)**. Datacenter Blackwell 10.x should be analyzed against its own
+capabilities. [NVIDIA GPU compute capability table](https://developer.nvidia.com/cuda/gpus)
 
-Conceptual schedule:
+| Mechanism | RTX 50 / Blackwell | RTX 40 / Ada | Porting consequence |
+|---|---|---|---|
+| Per-thread global-to-shared asynchronous copy | Supports `cp.async` | Supports `cp.async`: 4, 8 or 16 bytes per thread/instruction | Ada already has a hardware asynchronous path |
+| TMA (Tensor Memory Accelerator) / bulk copy | Supports the corresponding bulk-transfer paths | No `cp.async.bulk` | Reassign copy participation and address calculation |
+| Copy completion | Transaction barriers can track completed bytes | Ordinary `cp.async` completion can join a CTA-local barrier | Rebuild an equivalent completion protocol |
+
+CUDA distinguishes the per-thread LDGSTS path, hardware-supported from compute
+capability 8.0, from TMA, introduced with 9.0. The former moves global data directly
+to shared memory. Linear TMA copies also differ from multidimensional tensor-map
+copies: the 512-byte case below is linear.
+[CUDA asynchronous data copies](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/async-copies.html)
+
+**TMA, clusters and barriers serve different purposes.** A cluster organizes CTAs
+and permits access to other member CTAs' shared memory; a barrier expresses
+completion dependencies. A bulk copy need not involve multiple CTAs. Our example
+uses CTA-local staging. Establishing cluster dependence elsewhere requires examining
+launch configuration and destination ownership.
+[NVIDIA Blackwell tuning guide](https://docs.nvidia.com/cuda/blackwell-tuning-guide/index.html)
+
+### 3.2 Where compatibility lowering loses overlap
+
+At the audited 512 FFN transfer sites, the original path elects one lane to issue a
+512-byte bulk copy and records expected transaction bytes. The Ada implementation
+distributes that region across a warp's 32 lanes. The data can remain identical
+while three execution properties change:
+
+1. **Per-lane addressing.** Each lane computes source and destination offsets.
+   Those addresses and predicates compete with matrix fragments for registers.
+   Direct asynchronous staging avoids payload registers, but addressing still costs work.
+2. **Premature completion waits.** An immediate `commit_group; wait_group 0`
+   makes issuing threads finish their copies before continuing otherwise independent
+   arithmetic. This shortens the interval available to hide copy latency.
+3. **Completion accounting.** Bytes transferred and arriving threads are different
+   units. After splitting the transfer, consumers must observe completion of every
+   contributing copy, not merely the arrival of the issuing threads.
+
+Transaction barriers track both arrivals and asynchronous transaction quantities;
+ordinary asynchronous barriers can defer phase completion through associated copy
+completion. This distinction underlies the ported protocol.
+[CUDA asynchronous barriers](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/async-barriers.html)
+
+### 3.3 Mapping one 512-byte tile onto Ada
+
+The retained 512 FFN implementation applies this mapping at two static bulk-copy
+sites; four 512 pooling sites use the same approach. A static site can execute
+repeatedly inside a loop.
+
+| Component | Ada implementation |
+|---|---|
+| Participation | Copy-warp lane `i` handles bytes `[16i, 16i + 15]`, for `i = 0…31` |
+| Coverage | `32 × 16 = 512` bytes, covering the original contiguous region |
+| Transfer | Each lane issues `cp.async.cg.shared.global` into the original shared tile |
+| Completion association | Each participating lane associates its preceding copies with the consumer's barrier |
+| Consumption | Preserve consumer phase waits and tile layout before the original matrix operations |
+
+We use `cp.async.mbarrier.arrive` without `.noinc`. Registration increments the
+current phase's pending count; completion of preceding copies asynchronously
+decrements it. Ordinary thread-arrival counts therefore remain intact while copy
+completion is tracked separately. Consumers use successful `mbarrier.test_wait`
+checks for the relevant phase. The association instruction is available from SM 8.0.
+[PTX ISA: cp.async.mbarrier.arrive and mbarrier.test_wait](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html)
+
+The port also uses Ada-supported wait forms and preserves ordinary arrival counts.
+Copy registration must precede the last ordinary arrival in that phase, preventing
+premature phase advancement. The transformation unit is therefore the complete
+dependency chain: copy issue, completion registration, ordinary arrival and consumer wait.
+
+Full 512-byte tiles have 16-byte-aligned sources and destinations. Other sites with
+boundary branches must retain their valid-byte and zero-fill behavior: skipping an
+out-of-range lane can otherwise leave stale shared data. The `cp.async.cg` cache
+policy is also a choice to evaluate against reuse, not an automatic throughput gain.
+[CUDA copy widths, alignment and cache paths](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/async-copies.html)
+
+### 3.4 Wait at consumption and overlap the next transfer
+
+**Ready to read** and **safe to overwrite** are separate dependencies. Double
+buffering must enforce both, so a new writer cannot overtake the current readers.
+[CUDA producer/consumer barrier pattern](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/async-barriers.html)
+
+This conceptual schedule uses two shared tiles, `A` and `B`:
 
 ```text
-issue next tile's transfers
-compute with the tile that is already ready
-complete the transfer group before consuming the next tile
-reuse a staging buffer only after its previous readers finish
+Prologue: copy tile 0 → A; wait for A
+Step 0: issue tile 1 → B; compute A; finish reading A; wait for B
+Step 1: issue tile 2 → A; compute B; finish reading B; wait for A
+…
+Drain: compute the final ready tile; finish all reads and writes
 ```
 
-CUDA's asynchronous-copy and barrier primitives explain the separation between
-issuing work and establishing completion. [CUDA programming guide](https://docs.nvidia.com/cuda/cuda-programming-guide/index.html)
+For per-tile transfer time `L` and compute time `C`, a serial model costs
+`N(L + C)`; ideal pipelining costs `L + (N − 1)max(L, C) + C`. This illustrates
+the overlap ceiling. Actual execution adds issue/synchronization overhead,
+bandwidth contention and resource costs. Less independent arithmetic leaves less
+latency to hide, while deeper buffering consumes more shared memory.
 
-We compare wait placement, staging lifetime and resulting register allocation
-together. An early 12-entry async/resource bundle reduced full-NR time by about
-**2.93–3.55%** across the recorded paired and independent measurements. This is a
-combined result; it does not assign that percentage to asynchronous copies alone.
-The native-copy control was approximately neutral.
+In CUDA C++, a similar design can use `cuda::memcpy_async` with `cuda::pipeline`:
+producers acquire free stages and commit copies; consumers wait before use and
+release after reading. Keep participating warps converged for shared-pipeline
+commit operations to avoid expanding batch counts and wait coverage through
+divergence. In our fused kernels, the implementation connects directly to existing
+barriers and staging buffers, preserving their mathematics and layout.
+[CUDA pipeline lifecycle and warp entanglement](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/pipelines.html)
+
+### 3.5 Evaluate overlap together with register allocation
+
+Earlier copy issue can extend address, phase-state and pending-fragment lifetimes.
+We therefore tune load placement and register allocation together, checking that
+new spill costs do not consume the recovered overlap. Section 4 covers live ranges;
+Section 5 covers fragment reuse inside fused FFNs.
+
+A 12-entry async/resource bundle reduced full-NR time by **2.93–3.55%** across
+paired and independent measurements. That figure belongs to the combined changes.
+Module results appear below; current full-network results are in the
+[benchmark report](benchmarks.md).
 
 ## 4. Register pressure, uniform lowering and local-memory spills
+
+### 4.1 Locate pressure through simultaneous live values
 
 The important quantity is the maximum number of simultaneously live values.
 An input fragment loaded early can stay live across address construction,
@@ -88,11 +210,22 @@ Our register work combines three choices:
 2. Retain useful reuse across MMA operations where it avoids redundant loads.
 3. Compare register caps and compiler allocation in the surrounding fused kernel.
 
-A representative 512-channel input/output projection audit showed **80 bytes of
-stack** in a wait-based adaptation, **88 bytes** in an initial asynchronous form,
-and **zero** in the refined forms. The refined examples used **126 / 123 registers**
-and **12,312 bytes of shared memory**; inspected local load/store instructions were
-eliminated. These are projection resource measurements, not a whole-model claim.
+The retained 512-channel input/output projections replace early loading of eight
+fragments with loading the two fragments currently being consumed. All 64 MMA
+operations retain their order, and the register cap remains 128. Fewer loaded but
+unused fragments remain live during address calculation and other MMA work.
+
+| Projection sample | Wait-based stack | Retained stack | Actual registers/thread | Shared/CTA |
+|---|---:|---:|---:|---:|
+| 512 input projection | 80 B | 0 B | 126 | 12,312 B |
+| 512 output projection | 80 B | 0 B | 123 | 12,312 B |
+
+Local load/store instructions disappear without additional shared allocation:
+these examples remove the need to spill those values. Inspecting actual registers,
+memory instructions and shared size distinguishes reduced live sets from a change
+of spill destination.
+
+### 4.2 Connect uniform lowering to live ranges
 
 Uniform lowering is part of this problem, but should be described precisely.
 The audit found **132 uniform FP8 zero-conversion positions across 24 entries**
@@ -101,20 +234,75 @@ consistent when uniform instructions were included. Ada has uniform-register
 facilities; the evidence is about different lowering and pressure on ordinary
 registers, not an absence of uniform registers on RTX 40 or a proven 32× cost.
 
+Its optimization significance is that target lowering can assign constants,
+conversion results and address state to different register classes and dependency
+chains. Even with unchanged conversion counts, more ordinary values can overlap
+with matrix accumulators. We therefore examine each producer-to-last-consumer
+interval and adjust nearby loading/reuse, rather than predict gains from uniform
+instruction counts. The 132 positions describe audit coverage, not 132 independent
+speedup contributions.
+
+### 4.3 Register caps, allocation and residency
+
+A cap constrains compilation; actual allocation can be lower. The selected 512 FFN
+has a 128-register cap but uses 118 registers with zero stack. Other kernels retain
+some spill in exchange for lower per-thread allocation. In Section 2's capacity
+model, a 256-thread CTA has a register-only bound of one resident CTA at 168
+registers/thread and two at 128. This explains how a lower budget can improve
+execution; other resource constraints still determine the applicable residency bound.
+
 The objective is lower execution time. Register caps, load placement and reuse
 are selected together to balance spill traffic and active warp capacity.
 
 ## 5. Fused FFN, projection and boundary scheduling
+
+### 5.1 Change reuse inside the fused operator
 
 A fused kernel contains several internal computation phases. Its API boundary
 does not need to change to improve one phase. We work on input-fragment reuse,
 load placement and resource allocation while preserving the sequence of numerical
 operations and the memory layout expected by the next phase.
 
-For selected 256-channel boundaries, a wider output grouping allowed an input
-fragment to serve more work before reloading. This trades reduced input traffic
-against a larger live set. Deferred shared-memory loads and simple register
-allocation changes were also retained where they beat more elaborate tiling.
+In the selected 256 FFN expansion, two adjacent N32 output slices are paired into
+an internal N64 group. Each K step loads input fragment A once and uses it with
+the B fragments of both output slices:
+
+```text
+For adjacent output slices n and n+1:
+    In the original K order:
+        Load A[k]
+        Update slice n with A[k] and B[n,k]
+        Update slice n+1 with the same A[k] and B[n+1,k]
+    Activate, convert and contract slice n in the original order
+    Activate, convert and contract slice n+1 in the original order
+```
+
+This reduces A loads in the expansion loop, retaining B traffic and matrix work.
+N64 is the internal output-tile width; model channels are unchanged. The second
+slice needs separate accumulators, so the saved loads must outweigh the larger
+live set. Each result retains its K accumulation order, contraction slice order,
+FP8/FP16 conversions and output layout.
+
+### 5.2 Apply related methods at scale boundaries
+
+Boundary kernels also perform resampling or projection, whose surrounding work
+and synchronization must remain intact. The final 256 input/output boundaries
+retain N64 reuse plus deferred shared loads; 256 downsampling/upsampling retain
+their execution tiles with revised register budgets. Even at one channel count,
+the four boundaries use different final organizations.
+
+Deferred loads cross only computation independent of the fragment, never writes
+that modify the source, asynchronous copies or synchronization boundaries. The
+selected Input128 defers 40 static shared loads; Down64 / Up64 defer 16 / 32;
+Input256 / Output256 each defer 44 alongside N64 reuse. These counts describe
+relocated instructions, not deleted loads.
+
+The 512 FFN combines Section 3's asynchronous completion, a 128-register cap and
+the `mma_throughput` compiler hint. Selected pooling combines asynchronous
+completion with its own resource budget. The compiler chooses the concrete
+schedule for a hint; measurements characterize the entire retained combination.
+
+### 5.3 Module measurements
 
 The largest local improvements were concentrated in the deeper stages:
 
@@ -136,10 +324,37 @@ need channel- and shape-aware execution choices.
 
 ## 6. Shared memory: select profitable uses
 
+### 6.1 Let the compiler allocate spill storage
+
 Local-memory spills are device-memory-backed and may hit cache. Moving them to
 shared memory exchanges that access path for shared-memory capacity, addressing,
 bank layout and possibly synchronization. Unused capacity alone does not determine
 which path is faster.
+
+CUDA 13's `enable_smem_spilling` lets PTXAS prefer shared spill storage and use
+local memory for the remainder. The compiler manages slots and lifetimes instead
+of requiring manual variable selection. It operates in the supported whole-program
+compilation mode, excludes combinations such as dynamic shared memory, and uses
+launch bounds in its allocation estimates.
+[NVIDIA: shared-memory register spilling](https://developer.nvidia.com/blog/how-to-improve-cuda-kernel-performance-with-shared-memory-register-spilling/)
+
+We select spill policy, register budget and legal block compilation constraints
+together. A maximum compiled thread count is an upper bound, not necessarily the
+runtime launch size; a required block size constrains the actual launch. Attention
+and downsampling below retain their runtime thread counts while the compiler
+generates spill layouts under the revised legal upper bounds.
+
+### 6.2 Resource changes in retained implementations
+
+| Selected family | Runtime threads/CTA | Compilation constraint | Shared/CTA before → after | Stack before → after | Capacity-bound CTAs/SM before → after |
+|---|---:|---|---:|---:|---:|
+| ViT attention | 128 | Maximum 256 threads, automatic shared spilling | 8,208 → 16,400 B | 32 → 16 B | 4 → 4 |
+| 512 pooling | 128 | Require the original 128-thread block | 8,208 → 8,208 B | 88 → 56 B | 4 → 4 |
+| 256 downsampling | 256 | Maximum 512 threads, automatic shared spilling | 16 → 30 KiB | 24 → 0 B | 2 → 2 |
+
+These are compiled statistics and capacity queries against the preceding optimized
+implementations in that campaign. CTA counts express resource capacity. All three
+selections preserve that bound while changing staging or code generation.
 
 The shared-memory convergence retained ten calls in three narrow families:
 
@@ -153,7 +368,22 @@ The pooling control identifies its mechanism as fixed-block code generation.
 Shared-memory changes are retained where they improve measured execution with the
 surrounding register and synchronization costs included.
 
+### 6.3 Account for access costs as well as capacity
+
+Shared spill slots preserve thread-private value semantics; they are not a channel
+for sharing values between threads. Cross-thread tile reuse separately requires
+producer/consumer synchronization. These uses consume the same physical resource
+but have different lifetimes and ownership.
+
+Mechanism evidence here consists of resource changes, on/off comparisons under
+the same compilation constraints and complete-kernel timing. No new bank-conflict
+or dynamic spill-byte counts were collected, so stack reductions do not quantify
+saved DRAM traffic. If shared allocation reduces CTA capacity or increases address
+and access instructions, complete-kernel time decides the tradeoff.
+
 ## 7. Temporal Pre/Post and dimensions
+
+### 7.1 Preserve sampling mathematics and tune resources
 
 Pre/Post process surface inputs and outputs surrounding the interior network.
 The selected Pre candidate keeps the texture schedule and uses a 128-register cap
@@ -161,6 +391,27 @@ with local spilling. Temporal-frame local repeats improved **6.60–9.82%**. The
 selected Post uses a 128-register cap and shared spilling, with **2.84–4.19%** local
 improvement. First/no-history paths remain native where the retained temporal
 contract does not apply.
+
+| Retained implementation | Runtime threads/CTA | Actual registers/thread | Stack | Reported spill stores/loads | Shared/CTA |
+|---|---:|---:|---:|---:|---:|
+| Temporal Pre | 32 | 128 | 80 B | 80 / 80 B | 2,048 B |
+| Temporal Post | 32 | 128 | 0 B | 0 / 0 B | 2,560 B |
+
+Both preserve sampling coordinates, texture access order, FMA and quantization.
+Pre and Post select different spill policies from their complete-kernel results.
+The table reports compiler statistics: Pre's 80 B is not 80 bytes of traffic per frame.
+
+### 7.2 Validate real surfaces and history
+
+Pre reads texture objects and Post writes a surface, so ordinary linear-pointer
+replay is insufficient. Local validation retains actual textures, history and
+other arguments while creating independent output buffers or matching-format
+surfaces. Each arm restores full outputs and guard regions before execution, so
+unwritten candidate regions cannot inherit reference data. Checks cover current
+outputs and next-frame history, with static and moving inputs used to evaluate
+the retained methods.
+
+### 7.3 Pass dimensions as parameters
 
 The adapter consumes native dimensions and padding. Four previously
 constant-folded sites have general variants, and exact known shapes can still
@@ -187,12 +438,30 @@ under an identical interface. That is the meaningful boundary for compatibility
 work. Package checksums serve integrity and experiment provenance, not an upstream
 version whitelist.
 
-The Evaluate forwarding path preserves the original return address through a tail
-jump. Its assembly is checked during the build because ordinary wrapper calls
-previously broke the game integration. The patch changes function selection rather
-than the community plugin's presentation pipeline.
+Evaluate forwarding preserves the original return address through a tail jump;
+build-time assembly checks preserve caller identity and the integration contract.
+Substitution occurs at network function selection, with presentation managed by
+the community plugin.
 
 ## 9. Validation and final measured results
+
+### 9.1 Experimental levels and statistics
+
+| Level | Controlled setup | Recorded metrics |
+|---|---|---|
+| Compilation/resources | Fixed target SM, options, block and candidate identity | Actual registers, stack, spill instructions, shared size and capacity bounds |
+| Local replay | Identical captured inputs, restored scratch/state, alternating arms | Complete-kernel time; module sums of call medians |
+| Full NR | RTX 4080 / driver 616.56; fixed synthetic model1/sRGB input | 100 warmup frames and 400 measured frames per run; paired and independent processes |
+| Game | Cyberpunk 2077 2.31 official benchmark; identical settings within each resolution | Two runs each of the original game, community and optimized paths; FPS and added frame cost |
+
+Full-NR ABBA orders community, optimized, optimized, community; BAAB reverses it.
+Paired NR figures average each arm's mean across two runs; independent-process
+figures average two run P50s. Local replay uses its own statistics and is not mixed
+with whole-network means. Game settings use High raster, native DLAA and SDR, with
+RT, PT, RR, FG, dynamic resolution, Reflex, VSync and frame caps disabled.
+[Full protocol and per-run summaries](benchmarks.md)
+
+### 9.2 Correctness validation
 
 Validation progresses from compiled resource inspection and operator replay to
 output comparison, full inference and game measurements. The **200 captured tensors/outputs** from the integrated interior selection,
@@ -200,6 +469,13 @@ totaling **2.171 GB**, were byte-identical in its recorded validation. Surface c
 cross-size adapter matrix compares final images from independent native and
 optimized processes with static, moving and NR+SR inputs: 12 pairs, three frames
 per process, 72 frames total, with byte-identical final images.
+
+Operator checks cover numerical outputs, read/write scratch, synchronization state
+and guard regions; Pre/Post checks cover texture/surface outputs and history.
+Cross-size final-image comparisons add integration coverage to the local
+numerical checks.
+
+### 9.3 Pure inference and game results
 
 | Resolution | Community NR → optimized NR | NR time reduction | Community game → optimized game FPS |
 |---|---:|---:|---:|
@@ -219,7 +495,8 @@ is `f × r`, before accounting for changed overlap and contention. A 20% reducti
 in a region taking 25% of the total gives a 5% total reduction. Local percentages
 also cannot be added across overlapping regions or different baselines.
 
-Game added cost is estimated as `1000/FPS_on − 1000/FPS_off`. It includes the
+Game added cost is estimated as `mean(1000/FPS_on) − mean(1000/FPS_off)`, converting
+each run to milliseconds before averaging. It includes the
 integration path and interactions with rendering. At 4K it measured
 **16.714 → 15.416 ms**. The public RTX 5070 Ti reference is **17 ms** from a different
 game, NBA 2K27; it provides context rather than a controlled GPU speed ratio.
