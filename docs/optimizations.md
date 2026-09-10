@@ -195,64 +195,151 @@ paired and independent measurements. That figure belongs to the combined changes
 Module results appear below; current full-network results are in the
 [benchmark report](benchmarks.md).
 
-## 4. Register pressure, uniform lowering and local-memory spills
+## 4. Uniform execution, register pressure and repeated spill/reload
 
-### 4.1 Locate pressure through simultaneous live values
+### 4.1 Why the same register cap does not mean the same headroom
 
-The important quantity is the maximum number of simultaneously live values.
-An input fragment loaded early can stay live across address construction,
-synchronization and unrelated matrix operations. Delaying immutable loads until
-closer to their use reduces this overlap without changing arithmetic order.
+Reusing RTX 50-oriented PTX with the same per-thread register cap preserves the
+mathematical workload, but Ada code generation can change register demand, load
+ordering and staging costs. **The critical questions are which values occupy
+ordinary thread registers after porting, and how long they remain live together.**
 
-Our register work combines three choices:
+Both RTX 50 and RTX 40 have uniform registers and execution paths. Blackwell has
+broader uniform arithmetic coverage, including the uniform floating-point add,
+multiply and FMA operations in NVIDIA's instruction tables. Ada also supports
+uniform integer, addressing and some conversion operations, with different coverage.
+[NVIDIA Binary Utilities: Ada and Blackwell instruction sets](https://docs.nvidia.com/cuda/archive/13.0.2/cuda-binary-utilities/index.html)
 
-1. Move fragment loads toward their consumers.
-2. Retain useful reuse across MMA operations where it avoids redundant loads.
-3. Compare register caps and compiler allocation in the surrounding fused kernel.
+For a warp-uniform scalar, the compiler can use the uniform path when the operation
+and its consumers permit it. Moving such computation onto the ordinary thread path
+can introduce ordinary-register temporaries, conversions and moves that compete
+with A input fragments, B weight fragments and accumulators. Those matrix values
+usually contain lane-varying data; uniform execution primarily relieves the
+ordinary-register pressure from surrounding scalar computation.
 
-The retained 512-channel input/output projections replace early loading of eight
-fragments with loading the two fragments currently being consumed. All 64 MMA
-operations retain their order, and the register cap remains 128. Fewer loaded but
-unused fragments remain live during address calculation and other MMA work.
+The mechanism to consider is:
+
+```text
+Target uniform coverage, compatibility lowering and backend scheduling change
+    → ordinary-register temporaries and live ranges change
+    → the working set overlapping A/B fragments and accumulators grows
+    → a fixed budget requires load rescheduling or spill/reload
+    → fragments and accumulators repeatedly make room for each other
+    → more memory operations and dependency waits
+```
+
+What grows is the ordinary-register working set required by the inherited load
+schedule. With a fixed cap, final allocation can remain identical: the cost appears
+as additional spill/reload rather than an increasing register count in the resource report.
+
+### 4.2 Uniform-path changes observed in this model
+
+The zero-value FP8 conversion audit found this static distribution across 24 entries:
+
+| Compiled path | Ordinary F2FP zero conversions | Uniform UF2FP zero conversions | Total |
+|---|---:|---:|---:|
+| Official SM120 | 108 | 132 | 240 |
+| Community SM89 | 240 | 0 | 240 |
+
+**132 conversion positions move from the uniform to the ordinary path.** Unchanged
+conversion counts therefore do not establish unchanged cost: execution paths and
+register-use conditions differ. Ada's instruction table also lists `UF2FP`; actual
+differences depend on formats, operand combinations and backend choices. This table
+records the compiled behavior of these specific FP8 zero-conversion positions.
+
+This audit establishes an architecture-related execution-path change. The QKV
+controls below directly establish how register crowding and load scheduling produce
+spills. Together they motivate revisiting register lifetimes when porting; the
+controls have not separately attributed QKV's stack increase to uniform capability.
+
+### 4.3 QKV: spilled accumulators also displace A/B fragments
+
+After concentrated loading, the repeated 512 QKV matrix loop still needs these
+values before its first MMA, counted in the original PTX order:
+
+| 32-bit data values | Concentrated loading | Batched loading |
+|---|---:|---:|
+| Loop-carried accumulator values | 96 | 96 |
+| B weight fragments | 48 | 48 |
+| Loaded A input fragments | 32 (8 groups × 4) | 8 (2 groups × 4) |
+| Total | **176** | **152** |
+
+176 exceeds the 168-register budget before addresses and loop control are included.
+This program-point count describes live data, rather than a whole-kernel
+machine-code peak. The compiler can reduce this live set by changing load order.
+
+In the community SM89 result, we traced this in-loop spill/reload chain:
+
+```text
+Physical registers hold a B fragment needed later
+    → save that fragment to the thread-private local stack
+    → reload an old accumulator into the freed registers
+    → execute MMA and update the accumulator
+    → store the updated accumulator back to its local slot
+    → restore the B fragment for later matrix operations
+```
+
+A fragments undergo analogous displacement. Spilling an accumulator can therefore
+require extra operand saves and restores, beyond storing a value once. These
+accesses sit inside repeated computation and add memory instructions and dependency
+chains. The sample's 184-byte per-thread stack comprises 88 bytes of accumulator
+slots, 8 bytes of independent control slots, and 88 bytes of temporary/reused slots
+holding A/B fragments and control values. This is capacity; executed traffic depends
+on access frequency.
+
+Two kinds of repeated loading matter: this section addresses **compiler-generated
+local spill/reload to free registers**; Section 5's N64 reuse reduces **repeated
+reads of shared A fragments in the original expansion loop**. Both depend on the
+budget for retained fragments, but involve different memory paths and transformations.
+
+### 4.4 Same-PTX, same-cap controls and the repair
+
+With identical community-compatible PTX, compiler and optimization options, a
+168-register cap produces:
+
+| Compiled path | Actual registers/thread | Stack/thread | Static local loads/stores | 128-bit shared loads before the first loop MMA |
+|---|---:|---:|---:|---:|
+| Same compatible PTX → SM120 | 168 | 0 B | 0 / 0 | 2 |
+| Same compatible PTX → SM89 | 168 | 184 B | 38 / 47 | 8 |
+| SM89 with batched loading | 168 | 0 B | 0 / 0 | 2 |
+
+The SM120 backend interleaves loading and computation automatically; concentrated
+early loading on SM89 creates the fragment/accumulator competition above. Moving
+SM89 loads closer to their consumers keeps actual registers at 168 and shared
+memory at 8,208 bytes, preserves the mathematical order of all 256 matrix
+multiply-accumulate instructions, and eliminates the local spill/reload chain.
+The SM120 row is a local compilation control.
+
+**The directly supported intervention is reducing simultaneously live data and
+restoring interleaved loading and computation.** Uniform execution, copy adaptation
+and backend scheduling are relevant factors in cross-architecture pressure; this
+intervention demonstrates removing the sample's repeated displacement without
+changing matrix mathematics or increasing the register cap.
+
+The related 512 input/output projections replace early loading of eight fragments
+with loading the two currently consumed fragments, preserving all 64 MMA operations'
+order and the 128-register cap.
 
 | Projection sample | Wait-based stack | Retained stack | Actual registers/thread | Shared/CTA |
 |---|---:|---:|---:|---:|
 | 512 input projection | 80 B | 0 B | 126 | 12,312 B |
 | 512 output projection | 80 B | 0 B | 123 | 12,312 B |
 
-Local load/store instructions disappear without additional shared allocation:
-these examples remove the need to spill those values. Inspecting actual registers,
-memory instructions and shared size distinguishes reduced live sets from a change
-of spill destination.
+Their local load/store instructions also disappear without additional shared
+allocation. These changes remove the corresponding spill requirement; Section 6
+addresses selecting storage for remaining spills.
 
-### 4.2 Connect uniform lowering to live ranges
-
-Uniform lowering is part of this problem, but should be described precisely.
-The audit found **132 uniform FP8 zero-conversion positions across 24 entries**
-whose representation changed in the Ada path. Total conversion counts remained
-consistent when uniform instructions were included. Ada has uniform-register
-facilities; the evidence is about different lowering and pressure on ordinary
-registers, not an absence of uniform registers on RTX 40 or a proven 32× cost.
-
-Its optimization significance is that target lowering can assign constants,
-conversion results and address state to different register classes and dependency
-chains. Even with unchanged conversion counts, more ordinary values can overlap
-with matrix accumulators. We therefore examine each producer-to-last-consumer
-interval and adjust nearby loading/reuse, rather than predict gains from uniform
-instruction counts. The 132 positions describe audit coverage, not 132 independent
-speedup contributions.
-
-### 4.3 Register caps, allocation and residency
+### 4.5 Select register budgets together with residency
 
 A cap constrains compilation; actual allocation can be lower. The selected 512 FFN
 has a 128-register cap but uses 118 registers with zero stack. Other kernels retain
 some spill in exchange for lower per-thread allocation. In Section 2's capacity
 model, a 256-thread CTA has a register-only bound of one resident CTA at 168
-registers/thread and two at 128. This explains how a lower budget can improve
-execution; other resource constraints still determine the applicable residency bound.
+registers/thread and two at 128. Other resource limits still constrain residency.
 
-The objective is lower execution time. Register caps, load placement and reuse
-are selected together to balance spill traffic and active warp capacity.
+We therefore tune load placement, fragment reuse and register budgets together:
+remove unnecessary live-range overlap, retain worthwhile reuse, then use
+complete-kernel time to balance remaining spill costs against active-warp capacity.
 
 ## 5. Fused FFN, projection and boundary scheduling
 
