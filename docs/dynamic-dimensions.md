@@ -1,52 +1,45 @@
-# One installation, native runtime dimensions
+# Native dimensions and automatic dispatch
 
-[中文](dynamic-dimensions.zh-CN.md)
+[简体中文](dynamic-dimensions.zh-CN.md)
 
-The automatic-dimension draft removes the manual 1080p / 1440p / 4K installation choice. The same addon and
-GPU bundle follow the dimensions supplied by DLSS5. Aspect ratio is not an
-optimization profile: 16:10 and ultrawide inputs use the same path.
+DLSS5 supplies the network rectangle, padding, tiles and launch parameters. The
+patch forwards those values and selects the optimized function for the observed
+contract. One installation follows the game's resolution and aspect ratio.
 
-DLSS5 continues to choose the network rectangle, padding, tiles, memory layout,
-launch grid and scalar arguments. We keep those incoming values and replace only
-the selected GPU function when its contract matches. We do not resize the image
-or construct a second partitioning system in the installer.
+Most selected kernels already consume dynamic dimensions. Four call sites with
+folded dimensions have general variants; exact known active and internal shapes
+can select their specialized fast path automatically.
 
-Most retained kernels already used dynamic dimensions. Four call sites had
-dimension constants folded by our earlier optimization. Their new general variants
-keep height and width dynamic and fold only model-invariant choices. Previously
-measured size-specific fast paths remain available automatically when both active
-and internal dimensions match exactly. Users do not select them.
+## Correctness matrix
 
-## Evidence and boundaries
+| Input | Output | Check |
+|---|---|---|
+| 1600×1000, 1920×1200, 2560×1600 | Same size | 16:10 static inputs |
+| 3440×1440 | Same size | Ultrawide |
+| 1919×1199 | Same size | Odd active dimensions |
+| 1920×1080, 2560×1440, 3840×2160 | Same size | Standard static inputs |
+| 1920×1200, 2560×1600, 3440×1440 | Same size | Motion inputs |
+| 1280×800 | 1920×1200 | NR + SR |
 
-Real RTX 4080 runs compare separate community and optimized processes. Static
-input checks cover 1600×1000, 1920×1200, 2560×1600, 3440×1440, 1919×1199 and the
-original 1920×1080, 2560×1440, 3840×2160 sizes. Motion checks cover 1920×1200,
-2560×1600 and 3440×1440. Each case compares the final exported image after three
-frames and checks the observed replacement/error counters. This is not an
-exhaustive temporal-quality evaluation or an intermediate-tensor comparison.
+The matrix has 12 independent community/optimized pairs with three frames per
+process, totaling 72 frames. Final exported images are byte-identical in every
+pair. Startup runs natively to qualify the network; the following qualified graph
+replaces 145 interior and two temporal surface calls, with zero routing errors.
+[Machine-readable receipt](../benchmarks/dynamic-validation-2026-09-10.json).
 
-The tested sizes are examples, not a list enforced by the installer. Unknown
-dimensions can use the general path if the native model/launch contract matches.
-Unsupported contracts retain the native call and appear in routing diagnostics;
-they must not be reported as fully accelerated. Huge allocations can still exceed
-the GPU/runtime limits. No finite test set proves every possible image size.
+The tested sizes are samples, not installer presets. General dispatch derives
+shape relations from the runtime; matching unlisted sizes can use the same path.
+Input NR size and final display size remain separate, as demonstrated by NR + SR.
 
-NR size and final display size are separate concepts. Upscaling remains the
-runtime's job. A standalone NR+SR check also exercises 1280×800 input to
-1920×1200 output; this does not establish every game or dynamic-resolution mode.
-Changing resolution requires no reinstall, but long game sessions with resolution
-switches and dynamic resolution still need validation.
+## Integration
 
-145 interior calls can be replaced, with two additional Pre/Post calls when the
-supported temporal surface contract is present. First/no-history frames retain
-the native Pre/Post calls. The local bundle contains one addon and 47 GPU files
-(45 interior variants and two Pre/Post kernels), shared across all sizes.
+The bundle contains 45 interior variants and two Pre/Post kernels. Runtime entry
+points, model/format information and a complete native call sequence establish the
+contract before acceleration begins. Later calls retain live shape and ABI checks.
+A contract that changes uses the community function.
 
-Hardware, runtime identity, preset and format checks remain in force. This change
-generalizes dimensions, not the set of validated GPUs, drivers, games or modes.
-The public-compatible source preview contains the manager and results only; the
-private implementation and derived GPU files remain outside it.
-
-The timing tables elsewhere retain their fixed-size draft provenance. This dimension work
-does not establish a new percentage speedup at the newly checked sizes.
+The evidence was collected on RTX 4080 / driver 616.56. Those values identify the
+test machine and do not restrict installation. Longer temporal runs, live resolution
+changes and dynamic-resolution game sessions are further test targets. The matrix
+checks final images and routing, while [timing measurements](benchmarks.md) have
+separate recorded configurations.

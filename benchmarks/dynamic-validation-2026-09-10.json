@@ -1,14 +1,34 @@
 {
   "schemaVersion": 1,
   "buildLabel": "2026-09-10-native-dimensions",
-  "releaseStatus": "unreleased",
   "status": "passed-final-image-and-routing-checks",
   "gpu": "RTX 4080",
   "driver": "616.56",
-  "addonSha256": "e524df63c33b96d9049388fb5d8eebdc5dce3e2aed95ad06494926d4c9d7ceda",
+  "addonSha256": "01489b159b7fdc17c42154c6615eb59edccb88a440ba81b5e5516ccbc34f73e1",
   "runtimeSha256": "4b8d19bc3eff58a084f5eca7489c921501c203450169fb82ff4f649a4482ba05",
   "capturedContractChecks": 580,
   "cases": [
+    {
+      "input": "1280x800",
+      "output": "1920x1200",
+      "motion": false,
+      "pipeline": "nr+sr",
+      "frames": 3,
+      "finalImageIdentical": true,
+      "finalImageSha256": "32d45a22b058d87a06413d7543c23b65297d3f7a7d78f45230bea35a21278809",
+      "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
+      "temporalSurfaceReplacements": [
+        0,
+        0,
+        2
+      ],
+      "routingErrors": 0
+    },
     {
       "input": "1600x1000",
       "output": "1600x1000",
@@ -18,9 +38,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "56452622a6f3617c428526196923b43fc115df6a2382e98db6d97e1885fc6e3b",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -34,9 +59,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "bef9f232358f2935ab04c12ce74537961b8866e6bb98cb549dbdcc811ba6a44c",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -50,9 +80,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "af9f22fac159988b60a0073e2969b657297df375c576f47e5a394a4a4dce44d3",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -66,9 +101,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "797936a1ff2e0633eb75d9b196c96a8b6c362f693715c9a20fd4c1b73af91b2b",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -82,9 +122,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "7ca6d1766ff3d4b4de94de0989426e2ec0a04fd4fd064741e593b78414644b9c",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -98,9 +143,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "a7a02534a65baf796081bf6a88acb5bcc3bb83c2d609035e4a572fc08df1c030",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -114,9 +164,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "a04cd109076a7d924637e4b0419bc1a8a8775b89925d2922838a8a6a0dbe2443",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -130,9 +185,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "f61950ae6c11476080d826c258e49451f9b0249ca098ec95127d4b0e0aca184c",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -146,9 +206,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "f27b744640215ead3defaeee6671b07ee206de3137fad0608ed51b06583b14f9",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -162,9 +227,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "7a2e7c906f96611ca002aed4d6cbf2ca47dbc78330a9b9d99c5cc11837eef5f6",
       "interiorReplacements": 145,
+      "interiorReplacementSequence": [
+        0,
+        0,
+        145
+      ],
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -178,25 +248,14 @@
       "finalImageIdentical": true,
       "finalImageSha256": "743f71cb1364daa4e70950b1a2dde4b2220969dc037a77ce01e70e3964cb401b",
       "interiorReplacements": 145,
-      "temporalSurfaceReplacements": [
+      "interiorReplacementSequence": [
         0,
-        2,
-        2
+        0,
+        145
       ],
-      "routingErrors": 0
-    },
-    {
-      "input": "1280x800",
-      "output": "1920x1200",
-      "motion": false,
-      "pipeline": "nr+sr",
-      "frames": 3,
-      "finalImageIdentical": true,
-      "finalImageSha256": "32d45a22b058d87a06413d7543c23b65297d3f7a7d78f45230bea35a21278809",
-      "interiorReplacements": 145,
       "temporalSurfaceReplacements": [
         0,
-        2,
+        0,
         2
       ],
       "routingErrors": 0
@@ -204,7 +263,7 @@
   ],
   "gameBenchmarkRun": false,
   "performanceClaim": false,
-  "comparison": "Separate community and optimized processes; final exported image after three frames. No intermediate tensor comparison.",
+  "comparison": "Separate community and optimized processes; final exported image after three frames; initial native graphs qualify the call contract. No intermediate tensor comparison.",
   "limitations": [
     "Finite test matrix; not all sizes, modes or temporal scenes.",
     "No new performance or game benchmark.",

@@ -6,7 +6,7 @@
 <details name="language">
 <summary><strong>简体中文</strong></summary>
 
-基于社区 DLSS5 底座的轻量加速补丁。保留 NVIDIA 的数学运算与数据依赖，
+基于 [RenoDX DLSS5](https://github.com/RankFTW/rhi-repo) 的 **Ada / RTX 40 加速补丁**。保留 NVIDIA 的数学运算与数据依赖，
 针对 Ada 优化数据搬运、寄存器使用和融合内核调度。
 
 ### 优化内容
@@ -29,7 +29,7 @@ RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 
 纯 NR 表采用交替对照；4K 独立进程结果为 **18.281 → 16.789 ms（−8.16%）**。
 游戏使用《赛博朋克 2077》内置 benchmark。完整设置、重复测量和 1080p 波动见[测试报告](docs/benchmarks.zh-CN.md)。
-这些成绩来自此前固定尺寸构建；当前自动尺寸构建已通过 12 组正确性对照，性能待测。
+计时来自固定尺寸构建的实测，通用尺寸包的验证记录见[技术报告](docs/optimizations.zh-CN.md)。
 
 | 分辨率 | 游戏新增帧成本：社区 → 优化 | 公开 RTX 5070 Ti 参考 |
 |---|---:|---:|
@@ -40,11 +40,11 @@ RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 新增帧成本按开启/关闭 DLSS5 的整帧时间差估算。
 5070 Ti 参考来自 [TechSpot 的《NBA 2K27》测试](https://www.techspot.com/article/3170-real-dlss-5-performance/)，游戏与接入不同。
 
-### 使用与进度
+### 安装使用
 
-在已正常运行的 **ReShade 6.8.0 + RenoDX DLSS5 4.70 + 社区 NR 310.8.0** 上使用补丁。
-完整本地包通过 `Start.cmd` 安装、启动和卸载，分辨率在游戏中正常选择。
-仓库目前用于开发，首次发布待定；[安装与包内容](docs/install.zh-CN.md)。
+先安装并运行 [RenoDX DLSS5 base](https://github.com/RankFTW/rhi-repo)。
+解压加速包，双击 **Start.cmd** → 选择游戏目录 → **安装加速补丁**。
+之后照常从 Steam 或原启动器进入游戏。[完整安装说明](docs/install.zh-CN.md)。
 
 [优化方法](docs/optimizations.zh-CN.md) · [尺寸验证](docs/dynamic-dimensions.zh-CN.md) ·
 [后续计划](docs/roadmap.md) · [完整文档](docs/README.md)
@@ -57,7 +57,7 @@ RTX 4080 · 驱动 616.56 · Ryzen 9 9950X。
 <details name="language" open>
 <summary><strong>English</strong></summary>
 
-A lightweight acceleration patch for the community DLSS5 baseline. It preserves
+An **Ada / RTX 40 acceleration patch** for [RenoDX DLSS5](https://github.com/RankFTW/rhi-repo). It preserves
 NVIDIA's mathematics and data dependencies while tuning data movement, register
 usage and fused-kernel scheduling for Ada.
 
@@ -83,8 +83,8 @@ RTX 4080 · driver 616.56 · Ryzen 9 9950X.
 Pure NR rows use interleaved runs. Separate 4K processes measured
 **18.281 → 16.789 ms (−8.16%)**. Game results use Cyberpunk 2077's built-in benchmark.
 See [methods and repeats](docs/benchmarks.md), including the variable 1080p game gain.
-These timings belong to earlier fixed-size builds; the automatic-dimension build
-has passed 12 correctness pairs and awaits performance measurement.
+Timings were measured in fixed-shape builds; validation of the general-dimension
+package is recorded in the [technical report](docs/optimizations.md).
 
 | Resolution | Added game frame cost: community → optimized | Published RTX 5070 Ti reference |
 |---|---:|---:|
@@ -96,12 +96,12 @@ Added cost is estimated from the whole-frame time difference with DLSS5 on/off.
 The 5070 Ti reference comes from [TechSpot's NBA 2K27 test](https://www.techspot.com/article/3170-real-dlss-5-performance/),
 using a different game and integration.
 
-### Getting started
+### Install
 
-Start with a working **ReShade 6.8.0 + RenoDX DLSS5 4.70 + community NR 310.8.0** base.
-The complete local patch uses `Start.cmd` to install, launch and remove it;
-choose the resolution in the game as usual. Development is ongoing, with the
-first release still to come. See [installation and package contents](docs/install.md).
+First install and run the [RenoDX DLSS5 base](https://github.com/RankFTW/rhi-repo).
+Extract the acceleration package, double-click **Start.cmd**, select your game folder,
+and click **Install acceleration**. Then start the game through Steam or your usual
+launcher. [Full installation guide](docs/install.md).
 
 [Optimization methods](docs/optimizations.md) · [Dimension checks](docs/dynamic-dimensions.md) ·
 [Roadmap](docs/roadmap.md) · [Documentation](docs/README.md)

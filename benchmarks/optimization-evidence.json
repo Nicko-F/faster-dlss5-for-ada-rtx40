@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "metric": "time reduction percent",
+  "localScope": "sum of hot-replay call medians; not additive across groups",
+  "groups": [
+    {
+      "name": "512 FFN",
+      "calls": 15,
+      "localReductionPercent": [
+        39.11,
+        39.74
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-stages-20260908"
+    },
+    {
+      "name": "512 pooling",
+      "localReductionPercent": [
+        16.29,
+        16.45
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-stages-20260908"
+    },
+    {
+      "name": "512 stage",
+      "calls": 66,
+      "localReductionPercent": [
+        22.305,
+        22.181
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-stages-20260908"
+    },
+    {
+      "name": "ViT compute",
+      "calls": 40,
+      "localReductionPercent": [
+        12.285,
+        12.397
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-modules-20260908"
+    },
+    {
+      "name": "256 boundaries",
+      "localReductionPercent": [
+        19.02,
+        18.89
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-boundaries-20260908"
+    },
+    {
+      "name": "shared attention",
+      "calls": 8,
+      "incrementalLocalRangePercent": [
+        1.12,
+        1.25
+      ],
+      "baseline": "previous optimized selection",
+      "sourceReport": "ada-shared-memory-round-20260909"
+    },
+    {
+      "name": "shared pooling",
+      "incrementalLocalRangePercent": [
+        2.05,
+        2.42
+      ],
+      "baseline": "previous optimized selection",
+      "mechanism": "fixed-block codegen; shared-spill pragma did not change binary",
+      "sourceReport": "ada-shared-memory-round-20260909"
+    },
+    {
+      "name": "shared downsample256",
+      "incrementalLocalRangePercent": [
+        0.52,
+        0.83
+      ],
+      "baseline": "previous optimized selection",
+      "sourceReport": "ada-shared-memory-round-20260909"
+    },
+    {
+      "name": "temporal Pre",
+      "localRangePercent": [
+        6.6,
+        9.82
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-pre-20260909"
+    },
+    {
+      "name": "temporal Post",
+      "localRangePercent": [
+        2.84,
+        4.19
+      ],
+      "baseline": "community",
+      "sourceReport": "ada-post-20260909"
+    }
+  ],
+  "integratedCorrectness": {
+    "equalCapturedOutputs": 200,
+    "totalGB": 2.171,
+    "sourceReport": "ada-integrated-20260909"
+  },
+  "projectionResourceExample": {
+    "stackBytes": [
+      80,
+      88,
+      0
+    ],
+    "refinedRegisters": [
+      126,
+      123
+    ],
+    "refinedSharedBytes": 12312
+  },
+  "interpretation": [
+    "Groups overlap; local campaign deltas must not be added.",
+    "Whole-network and game results are recorded separately in results-2026-09-10.json."
+  ]
+}

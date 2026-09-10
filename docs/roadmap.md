@@ -1,26 +1,17 @@
-# Continuing development
+# Roadmap / 后续计划
 
-We will continue sharing new optimizations, measurements and compatibility work.
-Performance targets are research goals, not promised results or delivery dates.
+We will continue publishing optimizations, measurements and compatibility work.
+我们会持续更新优化、实测及兼容性工作。
 
-1. Establish a distributable acceleration payload and complete a public installation
-   test from a fresh matching community setup.
-2. Validate additional RTX 40 cards and newer drivers separately. Keep precise
-   profiles and avoid advertising an untested universal driver workaround.
-3. Improve small-resolution execution, especially the gap between 1080p NR timing
-   and the game's variable FPS gain.
-4. Continue profiling data movement, register lifetimes, attention/FFN scheduling,
-   and Pre/Post processing. Retain local wins, then evaluate integrated builds.
-5. Extend automatic-dimension validation to longer game sessions, in-game size
-   changes and dynamic resolution; expand independent temporal/visual checks.
-6. Collect matched-game, matched-settings RTX 5070 Ti comparisons.
+| Focus | 方向 |
+|---|---|
+| Improve low-channel and low-resolution execution. | 优化低通道与低分辨率执行。 |
+| Extend measurements to more RTX 40 cards and community updates. | 扩充 RTX 40 显卡及社区更新版本的测量。 |
+| Test longer motion sequences and live resolution changes. | 验证长时运动、运行中尺寸切换与动态分辨率。 |
+| Refine attention/FFN scheduling and profitable shared-memory reuse. | 继续改进 attention/FFN 调度和有效的片上复用。 |
+| Compare RTX 5070 Ti in the same game and settings. | 补充相同游戏、相同设置的 RTX 5070 Ti 对比。 |
 
-## Contribution policy
-
-Questions, reproducible benchmark reports and independently authored code are welcome.
-Please give GPU, driver, resolution, game/settings, base identity, timing method and
-all repeats, including regressions. Do not submit proprietary runtime files,
-extracted vendor code, weights, game assets or personal information.
-
-Issues and Discussions are enabled inside the private review repository. Public
-publication will be a separate decision after review.
+[Discussions](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/discussions)
+welcomes ideas; [Issues](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues)
+collects test results and problems. Include GPU, driver, base version, game/settings,
+resolution, timing method and repeated results when sharing a benchmark.

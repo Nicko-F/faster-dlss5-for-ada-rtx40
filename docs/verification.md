@@ -1,40 +1,44 @@
-# Automatic-dimension draft validation scope
+# Verification record
 
-September 10, 2026. Packaging and correctness checks are separate from performance
-measurements and from permission to redistribute the local GPU files.
+## Installer and interface
 
-- Native synthetic route tests check automatic selection, negative guards and
-  unchanged caller descriptors/parameter blocks. These tests use generated shapes
-  and are plumbing coverage, not independent proof of native dimension semantics.
+- Windows PowerShell 5.1 fixture tests cover game-folder discovery, updated base
+  files, copied bundle placement, moving the download, normal-launch status,
+  native qualification, incomplete/modified files, interrupted-install recovery,
+  uninstall and reinstall. Community files are checked for preservation.
+- The English/Chinese Windows form is constructed and its labels checked using
+  the built-in Windows Forms runtime. This is a construction check, not a visual
+  click-through test.
+- Runtime loading negotiates the selected entry points. Native route tests verify
+  initial qualification, live negative guards, unchanged caller argument blocks
+  and descriptors, and invalid-sequence recovery. The build audits Evaluate's
+  tail-jump forwarding convention.
+
+## GPU and numerical checks
+
 - 580 recorded native interior-call contracts across four sizes were checked
-  against the generated dimension guards.
-- Real community and optimized GPU processes check static, motion and NR+SR
-  final images. See [dynamic dimension scope](dynamic-dimensions.md) and its exported
-  validation receipt. Final-image equality does not mean every tensor was compared.
-- The build checks the required Evaluate forwarding convention and runs legacy
-  route regression tests. Vendor ABI and GPU code stay in the private workspace.
-- Windows PowerShell 5.1 manager fixtures cover automatic installation, mixed-size
-  status logs, pinned manifest/addon identities, exact file sets, missing payload,
-  collisions, tampered files, stale/partial logs, state-only recovery, moved/lost
-  packages, record-only recovery and removal of known fixed-size draft installations.
-- Fixture tests mock hardware/process checks and use dummy files; they do not
-  prove GPU execution. Production hardware and baseline guards remain enabled.
-- The final local bundle also passed install/remove against an isolated copy of
-  the real matching game/community files, with production GPU/driver checks enabled.
-  Base hashes were preserved. This placement test did not launch the game.
-- Original NR/game timing arithmetic is rechecked without relabeling its fixed-size draft
-  measurements as automatic-dimension draft performance. No new game benchmark is reported here.
-- Source packaging has an explicit allowlist and rejects vendor instruction/GPU
-  files, generated ABI headers, private folders and personal-path/token patterns.
-  It verifies archive membership, content hashes and ZIP integrity. This is an
-  engineering review, not a general legal certification.
+  against generated dimension guards.
+- 12 independent native/optimized pairs cover static, motion and NR + SR inputs.
+  Three frames per process give 72 frames total. Final images match byte for byte;
+  startup qualification is native and subsequent qualified calls are accelerated.
+  [Receipt](../benchmarks/dynamic-validation-2026-09-10.json).
+- The interior optimization campaign compared 200 captured tensors/outputs,
+  totaling 2.171 GB. These earlier intermediate-output checks and the current
+  final-image matrix cover different validation scopes.
+- Install/remove placement is tested using isolated copies of real community
+  files. This does not launch the game. Historical game measurements and their
+  settings are reported in [Benchmarks](benchmarks.md).
+
+## Reproduce tool checks
 
 ```powershell
 powershell.exe -NoProfile -File tests/manager.Tests.ps1
+powershell.exe -NoProfile -STA -File tools/Setup.ps1 -ValidateOnly
 python -m unittest discover -s tests -p test_*.py
 python tools/report_results.py
 python tools/package_preview.py
 ```
 
-The manager needs no Python. Arithmetic and packaging tools require Python 3.9+.
-The authored V1 API declaration is documentation, not an accelerator implementation.
+Only developer arithmetic and packaging tools need Python. The player installer
+uses Windows PowerShell and Windows Forms. Source packaging checks an explicit
+file list, archive contents and absence of vendor GPU files or private data.

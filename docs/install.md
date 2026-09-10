@@ -1,64 +1,80 @@
-# Install once, launch at your chosen resolution
+# Installation
 
-[中文](install.zh-CN.md)
+[简体中文](install.zh-CN.md)
 
-The source preview contains no acceleration payload. Check can inspect the base;
-Install and Launch need the complete local package, which remains local-only.
+This is an acceleration patch for **[RenoDX DLSS5](https://github.com/RankFTW/rhi-repo)** on Ada / RTX 40.
+Install the community base first and confirm that DLSS5 works in your game.
+[Community downloads](https://github.com/RankFTW/rhi-repo/releases) · [ReShade with addon support](https://reshade.me/)
 
-## Requirements
+## Install
 
-Install the community base and confirm it works first. This is an incremental
-acceleration patch, not an all-in-one compatibility package. The patch does not
-install or repair the base; its checks identify the tested base and whether our
-specific substitutions can be used.
+1. Close your game and extract the acceleration package.
+2. Double-click **Start.cmd**. Choose English or 简体中文 in the top-right corner.
+3. Click **Browse** and select your game folder. You can also select the folder containing `renodx-dlss5.addon64` directly.
+4. Click **Install acceleration**.
+5. Start the game from Steam or your usual launcher and enable DLSS5 as you normally would.
 
-- Windows PowerShell 5.1 and a writable extracted package folder.
-- Validated RTX 4080, driver 616.56, Cyberpunk 2077 2.31.
-- An existing matching ReShade 6.8.0 addon / RenoDX DLSS5 4.70 / community NR
-  310.8.0 installation, including its normal Visual C++ runtime dependencies.
-- SDR, NR enabled, RenoDX style/preset 0 and intensity 1 as used in the measured
-  game setup. Other modes still require validation.
+The installer remembers the selected folder. You can move or delete the downloaded
+package after installation. No Python, CUDA Toolkit, command-line setup or resolution
+profile is needed. Resolution, aspect ratio and padding follow your community base.
 
-Resolution handling, partitioning and padding are existing base capabilities;
-the patch uses those native parameters. Installation requires no resolution choice
-or reinstall after a size change.
-See [scope and validation](dynamic-dimensions.md).
+## Check that it is working
 
-## Complete local package
+Open **Start.cmd** and select **Check status**. An installed copy is also available at
+`faster-dlss5/Start.cmd` beside your community addon.
 
-1. Close the game. If an earlier fixed-size draft is installed, use **Remove** first; this draft can recognize
-   and remove its recorded addon. Do not overwrite an existing installation.
-2. Extract the entire automatic-dimension draft archive to a writable folder and keep it there.
-3. Double-click **Start.cmd**, choose **Check compatibility**, and enter the game folder.
-4. Choose **Install**, then **Launch**. Choose your resolution in the game normally.
-5. After exiting, choose **Verify latest run**. It reports observed NR dimensions
-   and checks all complete graph records for substitution counts and errors.
-6. To restore the existing community path, close the game and choose **Remove**.
+- **Installed:** ready for you to start the game and enable DLSS5.
+- **Waiting:** the addon is loading or checking the native network calls.
+- **Acceleration worked:** the recorded game session used the optimized kernels.
+- **Some work used the community path:** select **Open diagnostics** for details.
 
-Only our addon and installation record are added to `bin/x64`. Kernels and logs
-remain in `profiles/automatic/bundle`. The manager does not replace community
-binaries, download a runtime, edit game settings or persist environment variables.
-It passes the bundle location to the launched game process. A normal Steam launch
-is not a verified optimized launch; use this manager.
+The first native network evaluations establish the call contract automatically.
+Acceleration starts after that check succeeds. Status shows the recorded session
+time, so you can distinguish the last run from a game you have just opened.
 
-```powershell
-.\tools\Manage.ps1 -Action Check -GamePath 'D:\Games\Cyberpunk 2077'
-.\tools\Manage.ps1 -Action Install -GamePath 'D:\Games\Cyberpunk 2077'
-.\tools\Manage.ps1 -Action Launch -GamePath 'D:\Games\Cyberpunk 2077'
-.\tools\Manage.ps1 -Action Status -GamePath 'D:\Games\Cyberpunk 2077'
-.\tools\Manage.ps1 -Action Remove -GamePath 'D:\Games\Cyberpunk 2077'
+## Update or remove
+
+Close the game, select **Remove patch**, then install the replacement package if
+updating. The community base stays in place. If files inside the patch directory
+were modified or added, the manager preserves them in a nearby recovery folder
+and shows its path.
+
+## Folder layout
+
+```text
+community addon folder/
+  renodx-dlss5.addon64         community base
+  nvngx_dlssnr.dll            community NR runtime
+  ada-nr.addon64              acceleration addon
+  faster-dlss5-install.json   installation record
+  faster-dlss5/               installed tools and acceleration bundle
+    Start.cmd
+    tools/
+    profiles/automatic/
 ```
 
-Status validates routing, not image quality or GPU time. No-history frames may
-keep two native Pre/Post calls while the 145 interior calls are replaced. Different
-dimensions can appear in one launch; incomplete or failed routing causes a refusal.
+The installer discovers the base by its files, not by a game name. Runtime support
+is checked through the loaded interface and actual network call contracts. Updating
+a game, driver or community plugin does not trigger a whole-file hash whitelist.
+The tested configuration and performance measurements are in [Benchmarks](benchmarks.md).
 
-Keep the package in place for Launch/Status. If it was lost or moved, an intact
-copy of this manager can remove its recorded known addon without the old payload.
-Changed or unknown addon files are never overwritten or silently deleted.
-`-Action Remove -ForgetRecordOnly` explicitly forgets only our record and keeps
-any addon file; it does not uninstall that file.
+## If a step needs attention
 
-`compatibility/automatic.lock.json` pins the automatic-dimension draft manifest and addon; the legacy
-lock is retained only for fixed-size draft removal. Hashes detect drift, not independent
-publisher authentication. Obtain the entire package from the project owner.
+| Message or symptom | What to do |
+|---|---|
+| Community addon not found | Select the directory containing `renodx-dlss5.addon64`; if the base is not installed, use the community links above. |
+| Acceleration already installed | Use **Remove patch**, then install the new package. |
+| Package file damaged or missing | Extract the complete acceleration archive again. |
+| Installed, but no recorded frames | Enable community DLSS5 in the game, exit normally, then check status. |
+| An `ADA_NR_BUNDLE` override is shown | Remove that old experimental environment setting if you intend to use the installed bundle. |
+| Some calls use the community path | Attach the diagnostic logs to an [issue](https://github.com/Nicko-F/faster-dlss5-for-ada-rtx40/issues), including your GPU and base version. |
+
+For scripted installation:
+
+```powershell
+.\tools\Manage.ps1 -Action Install -GamePath 'D:\Games\YourGame'
+.\tools\Manage.ps1 -Action Status -GamePath 'D:\Games\YourGame'
+.\tools\Manage.ps1 -Action Remove -GamePath 'D:\Games\YourGame'
+```
+
+[Package contents](distribution.md) · [Technical report](optimizations.md)

@@ -1,6 +1,6 @@
 # Measurement protocol and reproducible arithmetic
 
-These measurements belong to the frozen fixed-size draft builds. Correctness checks for the automatic-dimension draft are recorded separately; these tables are not a new benchmark of automatic-dimension draft.
+Timing samples measure the selected optimizations in fixed-shape builds. Installation and general-dimension correctness checks are recorded separately.
 
 [中文](benchmarks.zh-CN.md)
 

@@ -1,3 +1,2 @@
 @echo off
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\Manage.ps1"
-pause
+powershell.exe -NoLogo -NoProfile -STA -WindowStyle Hidden -ExecutionPolicy Bypass -File "%~dp0tools\Setup.ps1"

@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference='Stop'
 $PackageRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 
-function Read-Json([string]$Path) { Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+function Read-Json([string]$Path) { Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json }
 function Get-Sha([string]$Path) { (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
 function Assert-PlainPath([string]$Path) {
     $cursor=[IO.Path]::GetFullPath($Path)
@@ -22,72 +22,58 @@ function Assert-PlainPath([string]$Path) {
     }
 }
 function Get-GameBin([string]$Path) {
-    if(-not $Path){throw 'Choose the Cyberpunk 2077 installation folder.'}
-    $resolved=(Resolve-Path -LiteralPath $Path).Path
-    $bin=if(Test-Path -LiteralPath (Join-Path $resolved 'Cyberpunk2077.exe')){$resolved}else{Join-Path $resolved 'bin/x64'}
-    Assert-PlainPath $bin
-    if(-not (Test-Path -LiteralPath (Join-Path $bin 'Cyberpunk2077.exe'))){throw 'Cyberpunk2077.exe was not found.'}
-    return $bin
-}
-function Assert-GameClosed {
-    if(Get-Process -Name 'Cyberpunk2077' -ErrorAction SilentlyContinue){throw 'Close Cyberpunk 2077 first.'}
-}
-function Assert-Baseline([string]$Bin) {
-    $baseline=Read-Json (Join-Path $PackageRoot 'compatibility/baseline.json')
-    $names=@('Cyberpunk2077.exe','dxgi.dll','renodx-dlss5.addon64','nvngx_dlssnr.dll')
-    if(@($baseline.files.PSObject.Properties).Count -ne $names.Count){throw 'Invalid baseline file set.'}
-    foreach($file in $baseline.files.PSObject.Properties) {
-        if($file.Name -notin $names -or $file.Value -notmatch '^[a-f0-9]{64}$'){throw 'Invalid baseline identity.'}
-        $path=Join-Path $Bin $file.Name
-        if(-not (Test-Path -LiteralPath $path) -or (Get-Sha $path) -ne $file.Value) {
-            throw "Baseline mismatch: $($file.Name). Use your existing matching community installation; no vendor files are downloaded."
+    if(-not $Path){throw 'Select the folder containing your community DLSS5 addon.'}
+    $resolved=(Resolve-Path -LiteralPath $Path.Trim('"')).Path
+    if(Test-Path -LiteralPath $resolved -PathType Leaf){$resolved=Split-Path -Parent $resolved}
+    $direct=Join-Path $resolved 'renodx-dlss5.addon64'
+    if(Test-Path -LiteralPath $direct){Assert-PlainPath $resolved;return $resolved}
+    # Search only inside the folder selected by the player, without following links.
+    $queue=New-Object 'Collections.Generic.Queue[string]';$queue.Enqueue($resolved)
+    $found=@()
+    while($queue.Count) {
+        $dir=$queue.Dequeue()
+        foreach($child in Get-ChildItem -LiteralPath $dir -Directory -ErrorAction SilentlyContinue) {
+            if($child.Attributes -band [IO.FileAttributes]::ReparsePoint){continue}
+            if(Test-Path -LiteralPath (Join-Path $child.FullName 'renodx-dlss5.addon64')){$found+=$child.FullName}
+            else {$queue.Enqueue($child.FullName)}
         }
     }
+    if($found.Count -ne 1){throw 'Select the folder containing renodx-dlss5.addon64 (one community installation at a time).'}
+    Assert-PlainPath $found[0];return $found[0]
+}
+function Assert-GameClosed([string]$Bin) {
+    foreach($process in Get-Process -ErrorAction SilentlyContinue) {
+        try {$path=$process.Path} catch {continue}
+        if($path -and (Split-Path -Parent $path) -eq $Bin){throw 'Close the game before changing its acceleration patch.'}
+    }
+}
+function Assert-Baseline([string]$Bin) {
+    foreach($name in @('renodx-dlss5.addon64','nvngx_dlssnr.dll')) {
+        if(-not (Test-Path -LiteralPath (Join-Path $Bin $name) -PathType Leaf)){throw "Community DLSS5 file missing: $name. Select its plugin folder."}
+    }
+
 }
 function Assert-Hardware {
+    # Hardware information is diagnostic. CUDA module loading negotiates device/driver support.
     $nvidia=Get-Command 'nvidia-smi.exe' -ErrorAction SilentlyContinue
-    if(-not $nvidia){throw 'nvidia-smi was not found. This build requires the validated NVIDIA driver.'}
-    $rows=@(& $nvidia.Source '--query-gpu=name,driver_version' '--format=csv,noheader')
-    if($LASTEXITCODE -or $rows.Count -ne 1){throw 'This preview requires the validated single-GPU configuration.'}
-    $parts=$rows[0].Split(',')
-    if($parts[0].Trim() -ne 'NVIDIA GeForce RTX 4080' -or $parts[1].Trim() -ne '616.56') {
-        throw 'Validated target: RTX 4080 / driver 616.56. Other RTX 40 GPUs and newer drivers need separate validation.'
+    if($nvidia) {
+        $rows=@(& $nvidia.Source '--query-gpu=name,driver_version' '--format=csv,noheader' 2>$null)
+        if($LASTEXITCODE -eq 0){Write-Host ($rows -join '; ')}
     }
 }
-function Get-LegacyProfileLock([string]$Id) {
-    if($Id -notin @('1920x1080','2560x1440','3840x2160')){throw 'Unsupported profile.'}
-    $lock=Read-Json (Join-Path $PackageRoot 'compatibility/profiles.lock.json')
-    $entry=$lock.profiles.$Id
-    $count=if($Id -eq '3840x2160'){39}else{43}
-    if($lock.schemaVersion -ne 1 -or -not $entry -or $entry.integratedCount -ne $count -or
-       $entry.manifestSha256 -notmatch '^[a-f0-9]{64}$' -or $entry.addonSha256 -notmatch '^[a-f0-9]{64}$'){
-        throw 'Invalid tested-profile lock.'
-    }
-    return $entry
-}
-function Get-ProfileLock {
-    $lock=Read-Json (Join-Path $PackageRoot 'compatibility/automatic.lock.json')
-    if($lock.schemaVersion -ne 2 -or $lock.profileId -ne 'native-dimension-v1' -or
-       $lock.integratedCount -ne 45 -or $lock.manifestSha256 -notmatch '^[a-f0-9]{64}$' -or
-       $lock.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid automatic-payload lock.'}
-    return $lock
-}
-function Get-Profile([bool]$VerifyPayload=$true) {
-    $lock=Get-ProfileLock
-    $dir=Join-Path $PackageRoot 'profiles/automatic'
+function Get-Profile([bool]$VerifyPayload=$true,[string]$Root=$PackageRoot) {
+    $dir=Join-Path $Root 'profiles/automatic'
     $path=Join-Path $dir 'manifest.json'
     if(-not (Test-Path -LiteralPath $path)) {
-        throw 'Acceleration payload is not included in the public source preview. Install/Launch require the complete local package; this download alone does not accelerate DLSS5.'
+        throw 'Open the complete acceleration package to install. The source archive contains the tools and documentation.'
     }
     Assert-PlainPath $dir
-    if((Get-Sha $path) -ne $lock.manifestSha256){throw 'Profile manifest is not the pinned tested identity.'}
     $manifest=Read-Json $path
     if($manifest.schemaVersion -ne 2 -or $manifest.profileId -ne 'native-dimension-v1' -or $manifest.mode -ne 2){throw 'Invalid profile manifest.'}
     $names=@($manifest.files.PSObject.Properties.Name)
     $expected=@('ada-nr.addon64','bundle/mode.txt','bundle/frontback-pre.cubin','bundle/frontback-post.cubin')
-    $expected+=@(0..($lock.integratedCount-1) | ForEach-Object {'bundle/integrated-{0:d2}.cubin' -f $_})
-    if($names.Count -ne $expected.Count -or @(Compare-Object $names $expected).Count -or
-       $manifest.files.'ada-nr.addon64' -ne $lock.addonSha256) {
+    $expected+=@(0..44 | ForEach-Object {'bundle/integrated-{0:d2}.cubin' -f $_})
+    if($names.Count -ne $expected.Count -or @(Compare-Object $names $expected).Count) {
         throw 'Profile file set or addon differs from the tested identity.'
     }
     foreach($file in $manifest.files.PSObject.Properties) {
@@ -96,118 +82,158 @@ function Get-Profile([bool]$VerifyPayload=$true) {
         if($VerifyPayload) {
             $target=Join-Path $dir $file.Name
             Assert-PlainPath $target
-            if(-not (Test-Path -LiteralPath $target) -or (Get-Sha $target) -ne $file.Value){throw "Payload mismatch: $($file.Name)"}
+            if(-not (Test-Path -LiteralPath $target) -or (Get-Sha $target) -ne $file.Value){throw "Acceleration package file is damaged or missing: $($file.Name). Extract the package again."}
         }
     }
     if($VerifyPayload -and (Get-Content -LiteralPath (Join-Path $dir 'bundle/mode.txt') -Raw).Trim() -ne '2'){throw 'Expected optimized mode 2.'}
-    return @{root=$dir; manifest=$manifest; sha=$manifest.files.'ada-nr.addon64'}
+    return @{root=$dir; manifest=$manifest; sha=(Get-Sha (Join-Path $dir 'ada-nr.addon64'))}
+}
+function Get-ManagerFiles {
+    @('Start.cmd','tools/Manage.ps1','tools/Setup.ps1')
+}
+function Get-OwnedTarget([string]$Root,[string]$Name) {
+    $allowed=($Name -in @(Get-ManagerFiles)) -or $Name -eq 'profiles/automatic/manifest.json' -or
+        $Name -match '^profiles/automatic/(ada-nr\.addon64|bundle/(mode\.txt|integrated-\d{2}\.cubin|frontback-(pre|post)\.cubin))$'
+    if(-not $allowed){throw 'Invalid installed file path.'}
+    $target=Join-Path $Root $Name;Assert-PlainPath $target;return $target
 }
 function Install-Profile([string]$Bin) {
-    Assert-GameClosed; Assert-Baseline $Bin; Assert-Hardware
+    Assert-PlainPath $Bin;Assert-GameClosed $Bin;Assert-Baseline $Bin;Assert-Hardware
     $profile=Get-Profile
-    $target=Join-Path $Bin 'ada-nr.addon64'
-    $statePath=Join-Path $Bin 'faster-dlss5-install.json'
-    if((Test-Path -LiteralPath $target) -or (Test-Path -LiteralPath $statePath)) {
-        throw 'An addon or installation record already exists. Remove this installation before installing this version. Unknown files are never overwritten.'
+    $target=Join-Path $Bin 'ada-nr.addon64';$statePath=Join-Path $Bin 'faster-dlss5-install.json'
+    $root=Join-Path $Bin 'faster-dlss5'
+    if((Test-Path -LiteralPath $target) -or (Test-Path -LiteralPath $statePath) -or (Test-Path -LiteralPath $root)) {
+        throw 'An acceleration installation already exists. Use Remove before installing again.'
     }
-    $state=[ordered]@{schemaVersion=2;profileId='native-dimension-v1';addonSha256=$profile.sha;packageRoot=$PackageRoot;installedUtc=[DateTime]::UtcNow.ToString('o')}
-    # Persist intent first. CreateNew and File.Copy(overwrite=false) protect existing files.
-    $stream=[IO.File]::Open($statePath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
-    try {$bytes=[Text.Encoding]::UTF8.GetBytes(($state | ConvertTo-Json));$stream.Write($bytes,0,$bytes.Length)} finally {$stream.Dispose()}
+    $owned=[ordered]@{}
+    $names=@(Get-ManagerFiles)+@('profiles/automatic/manifest.json')+@($profile.manifest.files.PSObject.Properties.Name | ForEach-Object {"profiles/automatic/$_"})
+    foreach($name in $names){$owned[$name]=Get-Sha (Get-OwnedTarget $PackageRoot $name)}
+    $state=[ordered]@{schemaVersion=3;profileId='native-dimension-v1';addonSha256=$profile.sha;installedUtc=[DateTime]::UtcNow.ToString('o');files=$owned}
+    $intent=Join-Path $Bin ('faster-dlss5-install-'+[guid]::NewGuid().ToString('N')+'.tmp')
+    $bytes=[Text.Encoding]::UTF8.GetBytes(($state|ConvertTo-Json -Depth 5))
+    $stream=[IO.File]::Open($intent,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    try {$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)} finally {$stream.Dispose()}
+    try {[IO.File]::Move($intent,$statePath)}finally{if(Test-Path -LiteralPath $intent){Remove-Item -LiteralPath $intent}}
+    foreach($name in $names) {
+        $dest=Get-OwnedTarget $root $name
+        [IO.Directory]::CreateDirectory((Split-Path -Parent $dest)) | Out-Null
+        [IO.File]::Copy((Join-Path $PackageRoot $name),$dest,$false)
+        if((Get-Sha $dest) -ne $owned[$name]){throw "Copy incomplete: $name. Use Remove and install again."}
+    }
     [IO.File]::Copy((Join-Path $profile.root 'ada-nr.addon64'),$target,$false)
-    if((Get-Sha $target) -ne $profile.sha){throw 'Installed addon hash mismatch; retain the record for recovery.'}
-    Write-Host "Installed automatic dimension support. Keep this extracted package in place. Launch through this manager."
+    if((Get-Sha $target) -ne $profile.sha){throw 'Addon copy incomplete. Use Remove and install again.'}
+    Write-Host 'Acceleration installed. Start the game from your usual launcher. You can move or delete the downloaded package.'
 }
 function Get-Installation([string]$Bin,[bool]$VerifyPayload=$true) {
-    $state=Read-Json (Join-Path $Bin 'faster-dlss5-install.json')
-    if($state.schemaVersion -ne 2 -or $state.profileId -ne 'native-dimension-v1' -or $state.packageRoot -ne $PackageRoot){throw 'Installation belongs to a different package location.'}
-    $profile=Get-Profile $VerifyPayload
-    if($state.addonSha256 -ne $profile.sha){throw 'Installation record does not match this package.'}
+    $statePath=Join-Path $Bin 'faster-dlss5-install.json';Assert-PlainPath $statePath
+    $state=Read-Json $statePath
+    if($state.schemaVersion -notin @(2,3) -or $state.profileId -ne 'native-dimension-v1'){throw 'Invalid installation record.'}
+    $root=if($state.schemaVersion -eq 3){Join-Path $Bin 'faster-dlss5'}else{$state.packageRoot}
+    if($state.schemaVersion -eq 3 -and $VerifyPayload) {
+        $manifestPath=Get-OwnedTarget $root 'profiles/automatic/manifest.json'
+        $recorded=$state.files.'profiles/automatic/manifest.json'
+        if($recorded -notmatch '^[a-f0-9]{64}$' -or -not (Test-Path -LiteralPath $manifestPath) -or
+           (Get-Sha $manifestPath) -ne $recorded){throw 'Installed package changed. Remove and reinstall the acceleration package.'}
+    }
+    $profile=Get-Profile $VerifyPayload $root
+    if($state.addonSha256 -ne $profile.sha){throw 'Installation record does not match its payload.'}
     return @{state=$state;profile=$profile}
 }
 function Remove-Profile([string]$Bin,[bool]$RecordOnly=$false) {
-    Assert-GameClosed
-    $statePath=Join-Path $Bin 'faster-dlss5-install.json'
-    Assert-PlainPath $statePath
+    Assert-GameClosed $Bin
+    $statePath=Join-Path $Bin 'faster-dlss5-install.json';Assert-PlainPath $statePath
     $state=Read-Json $statePath
-    if($state.schemaVersion -notin @(1,2) -or $state.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid installation record.'}
-    $lock=if($state.schemaVersion -eq 1){Get-LegacyProfileLock $state.resolution}else{
-        if($state.profileId -ne 'native-dimension-v1'){throw 'Invalid installation record.'}
-        Get-ProfileLock
-    }
-    if($state.addonSha256 -ne $lock.addonSha256){throw 'Installation record is not a known addon identity.'}
-    $target=Join-Path $Bin 'ada-nr.addon64'
-    Assert-PlainPath $target
-    if($RecordOnly) {
-        Remove-Item -LiteralPath $statePath
-        Write-Host 'Forgot only the installation record. Any addon file is still present; it was not uninstalled.'
-        return
-    }
+    if($state.schemaVersion -notin @(1,2,3) -or $state.addonSha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid installation record.'}
+    if($state.schemaVersion -ne 1 -and $state.profileId -ne 'native-dimension-v1'){throw 'Invalid installation record.'}
+    $target=Join-Path $Bin 'ada-nr.addon64';Assert-PlainPath $target
+    if($RecordOnly){Remove-Item -LiteralPath $statePath;Write-Host 'Installation record removed; addon files remain.';return}
     if(Test-Path -LiteralPath $target) {
-        if((Get-Sha $target) -ne $state.addonSha256){throw 'Addon changed since installation. Nothing was removed. Use Remove -ForgetRecordOnly only to forget our record and retain that unknown file.'}
-        Remove-Item -LiteralPath $target
+        if((Get-Sha $target) -ne $state.addonSha256){throw 'Addon changed since installation. Restore the original patch addon before removing it.'}
+    }
+    $root=Join-Path $Bin 'faster-dlss5';$owned=@()
+    if($state.schemaVersion -eq 3) {
+        foreach($file in $state.files.PSObject.Properties) {
+            $dest=Get-OwnedTarget $root $file.Name
+            if($file.Value -notmatch '^[a-f0-9]{64}$'){throw 'Invalid installed file hash.'}
+            $owned+=@{path=$dest;sha=$file.Value}
+        }
+    }
+    if(Test-Path -LiteralPath $target){Remove-Item -LiteralPath $target}
+    # Delete only recorded files with matching bytes. Keep any user-added or modified files.
+    foreach($file in $owned){if((Test-Path -LiteralPath $file.path) -and (Get-Sha $file.path) -eq $file.sha){Remove-Item -LiteralPath $file.path}}
+    if($state.schemaVersion -eq 3) {
+        foreach($name in @('profiles/automatic/bundle/ada-nr-events.log','profiles/automatic/bundle/ada-nr-frames.csv','profiles/automatic/bundle/launch-time.txt','build/player-settings.json')) {
+            $path=Join-Path $root $name;Assert-PlainPath $path
+            if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path}
+        }
+        $dirs=@($owned | ForEach-Object {Split-Path -Parent $_.path})+@((Join-Path $root 'profiles'),(Join-Path $root 'build'),$root)
+        foreach($dir in ($dirs | Sort-Object -Unique | Sort-Object { $_.Length } -Descending)) {
+            if((Test-Path -LiteralPath $dir) -and -not @(Get-ChildItem -LiteralPath $dir -Force).Count){Remove-Item -LiteralPath $dir}
+        }
+    }
+    if($state.schemaVersion -eq 3 -and (Test-Path -LiteralPath $root)) {
+        $resolved=[IO.Path]::GetFullPath($root);$parent=[IO.Path]::GetFullPath($Bin)
+        $recovery=Join-Path $parent ('faster-dlss5-recovered-'+[guid]::NewGuid().ToString('N'))
+        if((Split-Path -Parent $resolved) -ne $parent -or (Split-Path -Leaf $resolved) -ne 'faster-dlss5' -or
+           (Split-Path -Parent $recovery) -ne $parent){throw 'Invalid recovery folder.'}
+        Assert-PlainPath $resolved
+        Move-Item -LiteralPath $resolved -Destination $recovery
+        Write-Host "Modified or additional files saved to: $recovery"
+        $script:RecoveryPath=$recovery
     }
     Remove-Item -LiteralPath $statePath
-    Write-Host 'Removed our addon and installation record. The community installation is unchanged.'
+    Write-Host 'Acceleration removed. Your community DLSS5 installation is ready to use.'
 }
-function Show-Status([string]$Bin) {
+function Get-AccelerationStatus([string]$Bin) {
+    if(-not (Test-Path -LiteralPath (Join-Path $Bin 'faster-dlss5-install.json'))){return @{code='not-installed';graphs=0}}
     $install=Get-Installation $Bin
-    if((Get-Sha (Join-Path $Bin 'ada-nr.addon64')) -ne $install.profile.sha){throw 'Installed addon identity mismatch.'}
+    $addon=Join-Path $Bin 'ada-nr.addon64'
+    if(-not (Test-Path -LiteralPath $addon) -or (Get-Sha $addon) -ne $install.profile.sha){throw 'Installed addon is missing or changed. Remove and reinstall the patch.'}
     $bundle=Join-Path $install.profile.root 'bundle'
     $events=Join-Path $bundle 'ada-nr-events.log';$frames=Join-Path $bundle 'ada-nr-frames.csv'
-    $stamp=Join-Path $bundle 'launch-time.txt'
-    if(-not (Test-Path -LiteralPath $stamp) -or -not (Test-Path -LiteralPath $events) -or -not (Test-Path -LiteralPath $frames)) {
-        throw 'No completed launch evidence. Installation alone does not prove acceleration.'
-    }
-    $launched=[DateTime]::Parse((Get-Content -LiteralPath $stamp -Raw)).ToUniversalTime()
-    if((Get-Item -LiteralPath $events).LastWriteTimeUtc -lt $launched -or (Get-Item -LiteralPath $frames).LastWriteTimeUtc -lt $launched){throw 'Logs predate the latest launch.'}
+    if(-not (Test-Path -LiteralPath $events) -or -not (Test-Path -LiteralPath $frames)){return @{code='installed';graphs=0;bundle=$bundle}}
+    $installed=[DateTime]::Parse($install.state.installedUtc).ToUniversalTime()
+    if((Get-Item -LiteralPath $events).LastWriteTimeUtc -lt $installed -or (Get-Item -LiteralPath $frames).LastWriteTimeUtc -lt $installed){return @{code='installed';graphs=0;bundle=$bundle}}
     $log=Get-Content -LiteralPath $events -Raw
-    if($log -notmatch 'hook,1,mode,2' -or $log -notmatch 'evaluate_hook,1' -or $log -match 'failed|sequence_fallback') {
-        throw 'The latest launch has no clean optimizer hook evidence. See its event log.'
-    }
     $rows=@(Import-Csv -LiteralPath $frames)
-    $observed=@($rows | ForEach-Object {"$($_.width)x$($_.height)"} | Sort-Object -Unique)
-    $bad=@($rows | Where-Object {
-        $_.optimized -ne '1' -or $_.replaced -ne '145' -or $_.guard_failed -ne '0' -or $_.launch_errors -ne '0' -or
-        $_.surface_failed -ne '0' -or $_.width -notmatch '^[1-9][0-9]{0,4}$' -or
-        $_.height -notmatch '^[1-9][0-9]{0,4}$' -or [long]$_.width -gt 16384 -or [long]$_.height -gt 16384 -or
-        $_.output_format -notin @('28','10') -or
-        -not (($_.frontback -eq '2' -and $_.history_native -eq '0') -or ($_.frontback -eq '0' -and $_.history_native -eq '2'))
+    $qualifiedRows=@($rows | Where-Object {
+        $_.qualification -eq '1' -and $_.optimized -eq '0' -and $_.replaced -eq '0' -and
+        $_.frontback -eq '0' -and $_.guard_failed -eq '0' -and $_.launch_errors -eq '0' -and $_.surface_failed -eq '0'
     })
-    if(-not $rows.Count -or $bad.Count){throw "Incomplete or failed routing evidence: $($bad.Count) bad / $($rows.Count) complete graphs."}
-    Write-Host "Latest launch: $($rows.Count) complete graphs passed routing checks (observed NR sizes: $($observed -join ", ")). This checks routing, not image quality or GPU time."
+    $good=@($rows | Where-Object {
+        $_.optimized -eq '1' -and $_.replaced -eq '145' -and $_.guard_failed -eq '0' -and $_.launch_errors -eq '0' -and
+        $_.surface_failed -eq '0' -and $_.width -match '^[1-9][0-9]{0,4}$' -and $_.height -match '^[1-9][0-9]{0,4}$' -and
+        [long]$_.width -le 16384 -and [long]$_.height -le 16384 -and $_.output_format -in @('28','10') -and
+        (($_.frontback -eq '2' -and $_.history_native -eq '0') -or ($_.frontback -eq '0' -and $_.history_native -eq '2'))
+    })
+    $hook=$log -match 'hook,1,mode,2' -and $log -match 'evaluate_hook,1'
+    if($rows.Count -and ($rows[0].PSObject.Properties.Name -contains 'qualification')) {
+        $hook=$hook -and @($rows | Where-Object {$_.contract_qualified -eq '1'}).Count -gt 0
+    }
+    $code=if($hook -and $good.Count -gt 0 -and ($good.Count+$qualifiedRows.Count) -eq $rows.Count -and $log -notmatch 'failed|sequence_fallback'){'active'}
+          elseif(($rows.Count -gt $qualifiedRows.Count) -or $log -match 'failed|sequence_fallback'){'partial'}else{'waiting'}
+    return @{code=$code;graphs=$good.Count;total=$rows.Count;bundle=$bundle;lastRun=(Get-Item -LiteralPath $events).LastWriteTime}
 }
-function Start-OptimizedGame([string]$Bin) {
-    Assert-GameClosed; Assert-Baseline $Bin; Assert-Hardware
-    $install=Get-Installation $Bin
-    if((Get-Sha (Join-Path $Bin 'ada-nr.addon64')) -ne $install.profile.sha){throw 'Installed addon identity mismatch.'}
-    $bundle=Join-Path $install.profile.root 'bundle'
-    [IO.File]::WriteAllText((Join-Path $bundle 'launch-time.txt'),[DateTime]::UtcNow.ToString('o'))
-    $start=New-Object Diagnostics.ProcessStartInfo
-    $start.FileName=Join-Path $Bin 'Cyberpunk2077.exe';$start.WorkingDirectory=$Bin;$start.UseShellExecute=$false
-    $start.EnvironmentVariables['ADA_NR_BUNDLE']=$bundle
-    $process=[Diagnostics.Process]::Start($start)
-    Write-Host "Game started (PID $($process.Id)). Use SDR and the matching community NR settings. Dimensions follow the runtime automatically; there is no resolution profile to select."
-    Write-Host 'After exiting the game, use Status to verify the optimizer actually ran.'
+function Show-Status([string]$Bin) {
+    $status=Get-AccelerationStatus $Bin
+    $messages=@{'not-installed'='Not installed.';installed='Installed. Start the game and enable community DLSS5.';
+        active='Acceleration worked in the last recorded game session.';partial='Some work used the community path. Open the diagnostic folder for details.';
+        waiting='The addon started; waiting for DLSS5 frames.'}
+    Write-Host $messages[$status.code]
+    if($status.graphs){Write-Host "Accelerated frames: $($status.graphs)"}
+    if($env:ADA_NR_BUNDLE){Write-Host "ADA_NR_BUNDLE overrides the installed bundle: $env:ADA_NR_BUNDLE"}
 }
 function Invoke-Manager {
-    if($Action -eq 'Menu') {
-        Write-Host 'Faster DLSS5 for Ada / RTX 40 - experimental package manager'
-        Write-Host '1 Check compatibility  2 Install  3 Launch  4 Verify latest run  5 Remove'
-        $choice=Read-Host 'Choose 1-5'
-        $actions=@{'1'='Check';'2'='Install';'3'='Launch';'4'='Status';'5'='Remove'}
-        if(-not $actions.ContainsKey($choice)){throw 'Invalid selection.'};$Action=$actions[$choice]
-        $GamePath=Read-Host 'Cyberpunk 2077 installation folder (no quotes)'
-    }
+    if($Action -eq 'Menu'){& (Join-Path $PSScriptRoot 'Setup.ps1');return}
     $bin=Get-GameBin $GamePath
     switch($Action) {
-        'Check' {Assert-Baseline $bin; Assert-Hardware; Write-Host 'The measured game baseline and hardware match.';Get-Profile | Out-Null;Write-Host 'Acceleration payload verified.'}
+        'Check' {Assert-Baseline $bin;Assert-Hardware;Get-Profile|Out-Null;Write-Host 'Ready to install.'}
         'Install' {Install-Profile $bin}
-        'Launch' {Start-OptimizedGame $bin}
+        'Launch' {Write-Host 'Start the game through your usual launcher; the installed patch loads automatically.'}
         'Status' {Show-Status $bin}
         'Remove' {Remove-Profile $bin ([bool]$ForgetRecordOnly)}
     }
 }
 if($MyInvocation.InvocationName -ne '.') {
-    try {Invoke-Manager} catch {Write-Host "Stopped: $($_.Exception.Message)" -ForegroundColor Red;exit 1}
+    try {Invoke-Manager} catch {Write-Host $_.Exception.Message -ForegroundColor Red;exit 1}
 }

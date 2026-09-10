@@ -37,11 +37,11 @@ def audit(root=ROOT):
 
 def main():
     payload = audit()
-    target = ROOT/'dist/Faster-DLSS5-Ada-SOURCE-PREVIEW-UNRELEASED-20260910.zip'
+    target = ROOT/'dist/Faster-DLSS5-Ada-Source.zip'
     target.parent.mkdir(exist_ok=True)
     hashes = {k: hashlib.sha256(v).hexdigest() for k,v in payload.items()}
     payload['SOURCE-MANIFEST.json'] = (json.dumps(dict(schemaVersion=1,
-        status='source-preview-no-acceleration-payload', files=hashes),indent=2)+'\n').encode()
+        status='source-archive', files=hashes),indent=2)+'\n').encode()
     with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED) as z:
         for name,data in sorted(payload.items()):
             info=zipfile.ZipInfo(name,(2026,9,10,0,0,0))
