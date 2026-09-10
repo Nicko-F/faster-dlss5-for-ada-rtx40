@@ -1,4 +1,4 @@
-"""Build an audited source-preview archive from an explicit allowlist."""
+"""Build an audited source archive from an explicit allowlist."""
 import hashlib
 import json
 import re

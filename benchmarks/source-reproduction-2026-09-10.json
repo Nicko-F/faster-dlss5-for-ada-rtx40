@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-10",
+  "description": "Reproduce the retained Ada kernel bundle from local community runtime inputs using repository sources.",
+  "compilerVersion": "ptxas: NVIDIA (R) Ptx optimizing assembler\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun__9_14:30:19_Pacific_Daylight_Time_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+  "compilerSha256": "86b2ff48655c55f1547edc59b503d39a62aa5c71745b7ecf6be526c29af0b693",
+  "extractedPtxModules": 15,
+  "kernelImages": 47,
+  "byteIdenticalImages": 47,
+  "addonNativeRouteTests": "passed",
+  "evaluateTailJumpAudit": "passed",
+  "measurementScope": "Source reproduction and host routing validation; existing timing results are unchanged.",
+  "images": [
+    {
+      "filename": "integrated-00.cubin",
+      "sha256": "f04db5e5242fb42e86a6b4c3f52f73cdabaedf5de6ba6d64a8db7262f4f0a258",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-01.cubin",
+      "sha256": "abb7fd88a8fdfaac728b027e2ab1fbeed36771735ce0f6ccb360c4e5dfb65289",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-02.cubin",
+      "sha256": "49c45992b4eb77728dc3ac224dc31218b6db85c9c8d0dbd54f2f83414108b412",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-03.cubin",
+      "sha256": "189dd915c38ce5d06a83bdfd2448811a11682e3eebd7cc54ae189d43dbc8a530",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-04.cubin",
+      "sha256": "487c41cdc30b01ddabb54592ca436f271afd30ec0be483b0ab32b66bcc0cb109",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-05.cubin",
+      "sha256": "df21a58e4b5137a755fc7b18f1d4cc984f965489c66e0b4b8ac7c52f7134cba8",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-06.cubin",
+      "sha256": "dc11e22da6a9e5c9a84d7f7eec9fce30234dfe718d1da8f031cda5c1e4352f7f",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-07.cubin",
+      "sha256": "8c4384c048c2ea071502d5a226cbf046ccc2116acf7b695abd6b30e9d45b94f7",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-08.cubin",
+      "sha256": "34586d3b65df0f07ff8e5e04abd3bf52ce0ee04018665ab39fbcec297a123674",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-09.cubin",
+      "sha256": "ddfee8851c2353c6d7ea06a268a8c78f8b3475f23d16670f78e4b3d2bce8344e",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-10.cubin",
+      "sha256": "62c0cd0af56017d1894b5323c5e07c7cf81f9f7e719fe50f5be56864ccec0d75",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-11.cubin",
+      "sha256": "08c4e778246d28c06e0cdcdf25a9008d7c2b664b2d828c3551915cb005b7e92b",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-12.cubin",
+      "sha256": "965858838c519237610ac40a2892e78df9c3c0d903d6e8ea6b6becbbf9667dc8",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-13.cubin",
+      "sha256": "667285f3eb809547509f15ab17b78c5e1898fcf8a08984f9b9fecba68201b30b",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-14.cubin",
+      "sha256": "3fc0dabd24e9da60e2984e5647ab94cf6fde6986ce0c955c12f5e16e0fd9436a",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-15.cubin",
+      "sha256": "3455dec027162dfd9d604f7e3b1cb9a12cf665134cbb4d801a161a49c3239ff6",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-16.cubin",
+      "sha256": "d357ade6c33c96257f63958a00d3afa177496286807e9dcd2976365376bad8c3",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-17.cubin",
+      "sha256": "7a224457b283991bce44e20e4e3a1de59091d1fb78a66c99a6620613c3f468df",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-18.cubin",
+      "sha256": "80f7273da303a545ccf90b3e9d250ee229fdcacf14564bd2a2d7fc9c512085ce",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-19.cubin",
+      "sha256": "e1b3a57dde1183f81a545817395525c3320e675f3bfe66b96ff3a12d8a2ac031",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-20.cubin",
+      "sha256": "261b65166a9c3a7a09866fe3ddba522f8acf8a268289d2ca153fddc6384bae1c",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-21.cubin",
+      "sha256": "636135c052d8eeef826d5086686a87ee10300506fd4e96c495e05a1c1a01d298",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-22.cubin",
+      "sha256": "c12714747ef5f5697d9e0891485ac8e7f52f66bc0be286ae2f25eaff7d354d38",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-23.cubin",
+      "sha256": "eac1dab5318b607f370ccfbdd1cfb8db1e33e15fc4fcb46de0b7a0e69cc73867",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-24.cubin",
+      "sha256": "c56d28da9b4789879b59de42ae794b38f4a01fad5bc183b14d5f1b85ebd69475",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-25.cubin",
+      "sha256": "05325cded9da6122ffd2feaf9774bc538ddabea10a677bc542829b3a1ebbcf88",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-26.cubin",
+      "sha256": "fb8a9decbe2e800519b92ec24ae2820caa2698ace70d5ded5f44aaed579c8abb",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-27.cubin",
+      "sha256": "65f90f5d3bc6a2c711801ffbc99b56006e1a9703fcc916fa2292ad1e0770ca8b",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-28.cubin",
+      "sha256": "19d76d1cec77167bb6d89db1a66c7d15ec54b512fcad626e337b7c4ec29701e8",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-29.cubin",
+      "sha256": "6d855e6622bd2bd016b331c988648a43f20345a22a9a49fad1acc947404f5c5a",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-30.cubin",
+      "sha256": "45d78184f651f25a0edbcdd2fbcc5965afd64c6ae3b7d86de386eb535c6c7c38",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-31.cubin",
+      "sha256": "9c35b4a43f91b283eb9ef511728353a395998de65410be3b190bdb2d844de6e0",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-32.cubin",
+      "sha256": "de5110ace6867a83e0a556df44e175984338ab5b8b75acc8f5e03f01068e1238",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-33.cubin",
+      "sha256": "0f1d650d2113f3c7e2552f5544125d4de285e486c7ae8ca21afd93273ea31dcc",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-34.cubin",
+      "sha256": "01157264462e883f82a3d03da61233086d84d986d87c69521d6537b72b5fd46b",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-35.cubin",
+      "sha256": "b88573b5e8b022d4c8a87fa3989ab79cf6bb7684c838d953df30e611d302d0f0",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-36.cubin",
+      "sha256": "bf73e9f6fd86c8ed4d0b368662b8449a06c55878aa79cc1b3dc430510b2d1093",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-37.cubin",
+      "sha256": "1ff478f77ffe7cd45490735747fc1d0ce7b9e8898f695dc9d5bad7ae36156bfd",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-38.cubin",
+      "sha256": "c4b8a4606f581fb4a01eb61b55f8ea9a13d8d983189444304d79a769304a57bf",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-39.cubin",
+      "sha256": "b6044ba53d1e684f24db6935bb84c0dc96aea0fca088949c68e0a3b02ab74556",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-40.cubin",
+      "sha256": "ba1714a393b51ff667767c2702b5f2feded71bbf974427cc333ba866f0d6738c",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-41.cubin",
+      "sha256": "c51cca11dddcf9f6d8e56c34e6512bbf111b6fc5c25e0b158b0023f5c0803333",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-42.cubin",
+      "sha256": "b9e2265f82785503bfeeb74bac8075b73902b8f9c68f7cf658f9f2bd2e7213de",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-43.cubin",
+      "sha256": "74bea0f02e48e8588bf23a08245e33f46eb876748de63b1dfab6c3fa86ca66d7",
+      "byteIdentical": true
+    },
+    {
+      "filename": "integrated-44.cubin",
+      "sha256": "621051f87575f708e35be2182a341078a433b2a5a66b159a6f74f13ecc4a5964",
+      "byteIdentical": true
+    },
+    {
+      "filename": "frontback-pre.cubin",
+      "sha256": "2364d4eb63c6a5ed74dc666743e47007b08b60c93c9a85b18d2a082096622fd1",
+      "byteIdentical": true
+    },
+    {
+      "filename": "frontback-post.cubin",
+      "sha256": "c000d4c86656106036c0357b5891a26b722f8b06c816ac866e35d9eadee27a22",
+      "byteIdentical": true
+    }
+  ]
+}

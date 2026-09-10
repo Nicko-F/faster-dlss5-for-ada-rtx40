@@ -4,7 +4,7 @@
 // Keep this library and the selected runtime loaded for the process lifetime.
 struct AdaNrConfigV1 {
     unsigned structBytes,version;
-    const wchar_t *bundlePath,*runtimePath; // Absolute paths; binaries are hash checked.
+    const wchar_t *bundlePath,*runtimePath; // Absolute paths; locally built bundle images are integrity checked.
     unsigned mode; // 0 native diagnostics, 1 buffer, 2 buffer + Pre/Post.
 };
 using AdaNrInitializeV1Fn=BOOL (WINAPI *)(const AdaNrConfigV1*);

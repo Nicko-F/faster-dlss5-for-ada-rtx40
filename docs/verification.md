@@ -38,6 +38,15 @@
 
 ## Reproduce tool checks
 
+The [source build](build.md) extracted 15 PTX modules from the local community
+runtime and rebuilt all 47 selected cubins byte for byte identically with CUDA 13.3.
+The addon built from the repository passed native route tests and the Evaluate
+tail-jump audit. [Reproduction receipt](../benchmarks/source-reproduction-2026-09-10.json).
+
+Synthetic Python tests cover altered ABI metadata, malformed extraction headers,
+asynchronous completion adaptation, unsafe shared-load motion, and packaging that
+rejects changed images or stale build identities. No vendor input fixtures are needed.
+
 ```powershell
 powershell.exe -NoProfile -File tests/manager.Tests.ps1
 powershell.exe -NoProfile -STA -File tools/Setup.ps1 -ValidateOnly
@@ -46,6 +55,6 @@ python tools/report_results.py
 python tools/package_preview.py
 ```
 
-Only developer arithmetic and packaging tools need Python. The player installer
+Developer build, transformation, arithmetic and packaging tools use Python. The player installer
 uses Windows PowerShell and Windows Forms. Source packaging checks an explicit
 file list, archive contents and absence of vendor GPU files or private data.

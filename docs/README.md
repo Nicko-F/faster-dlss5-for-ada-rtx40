@@ -4,6 +4,7 @@
 |---|---|---|
 | Downloads / 下载 | [Packages](downloads.md) | [下载包](downloads.zh-CN.md) |
 | Installation / 安装 | [Guide](install.md) | [指南](install.zh-CN.md) |
+| Source and build / 源码与构建 | [Build](build.md) | [构建](build.zh-CN.md) |
 | Technical report / 技术报告 | [Report](optimizations.md) | [报告](optimizations.zh-CN.md) |
 | Benchmarks / 性能 | [Results](benchmarks.md) | [结果](benchmarks.zh-CN.md) |
 | Dimensions / 尺寸 | [Validation](dynamic-dimensions.md) | [验证](dynamic-dimensions.zh-CN.md) |

@@ -1,0 +1,1022 @@
+{
+  "schemaVersion": 1,
+  "kernels": [
+    {
+      "filename": "integrated-00.cubin",
+      "entry": "cc_tinlayout_fused_swin_1h_32_1_inpview_tilesync_fp8",
+      "parameterBytes": 96,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-01.cubin",
+      "entry": "cc_tinlayout_fused_swin_1h_32_1_chained_fp8",
+      "parameterBytes": 96,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-02.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 7,
+        "resolution": "3840x2160",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "20020000c0030000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "0000000000000000"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "integrated-03.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 8,
+        "resolution": "3840x2160",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "20020000c0030000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcffffff00000000"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "integrated-04.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_ds_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 16,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-05.cubin",
+      "entry": "cc_tinlayout_fused_swin_4h_128_4_inpview_tilesync_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 40,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-06.cubin",
+      "entry": "cc_tinlayout_fused_swin_4h_128_4_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-07.cubin",
+      "entry": "cc_tinlayout_fused_swin_4h_128_4_ds_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-08.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_inpview_tilesync_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 44,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": "boundary256"
+    },
+    {
+      "filename": "integrated-09.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": "ffn256"
+    },
+    {
+      "filename": "integrated-10.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_ds_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-11.cubin",
+      "entry": "cc_split_swin_16h_ffwd_proj_inpview_512_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 8,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": "InpProj512"
+    },
+    {
+      "filename": "integrated-12.cubin",
+      "entry": "cc_split_swin_16h_qkv_512_chained_fp8",
+      "parameterBytes": 56,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": "qkv"
+    },
+    {
+      "filename": "integrated-13.cubin",
+      "entry": "cc_split_swin_16h_proj_512_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-14.cubin",
+      "entry": "cc_split_swin_16h_ffwd_512_chained_fp8",
+      "parameterBytes": 56,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 2,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": true,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-15.cubin",
+      "entry": "cc_split_swin_16h_ffwd_proj_512_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 8,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-16.cubin",
+      "entry": "cc_split_swin_16h_proj_pool_512_chained_fp8",
+      "parameterBytes": 80,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-17.cubin",
+      "entry": "cc_split_swin_16h_final_head_512_wait_fp8",
+      "parameterBytes": 40,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-18.cubin",
+      "entry": "cc_vit_1d_ffn_expand_publish_fp8",
+      "parameterBytes": 72,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 24,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-19.cubin",
+      "entry": "cc_vit_1d_ffn_contract_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 12,
+      "reductions": 16,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-20.cubin",
+      "entry": "cc_vit_1d_ffn_contract_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 12,
+      "reductions": 16,
+      "deferredSharedLoads": 16,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-21.cubin",
+      "entry": "cc_vit_1d_qkv_chained_fp8",
+      "parameterBytes": 80,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-22.cubin",
+      "entry": "cc_vit_1d_attention_chained_fp8",
+      "parameterBytes": 64,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-23.cubin",
+      "entry": "cc_vit_1d_attention_chained_fp8",
+      "parameterBytes": 64,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-24.cubin",
+      "entry": "cc_vit_1d_projection_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 16,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-25.cubin",
+      "entry": "cc_vit_1d_ffn_expand_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 168,
+      "lowering": "async",
+      "copies": 24,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-26.cubin",
+      "entry": "cc_vit_1d_ffn_expand_chained_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 24,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-27.cubin",
+      "entry": "cc_vit_1d_projection_wait_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 16,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": null
+    },
+    {
+      "filename": "integrated-28.cubin",
+      "entry": "cc_split_swin_16h_proj_512_outview_wait_fp8",
+      "parameterBytes": 72,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 8,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": null,
+      "block": null,
+      "pairing": "OutProj512"
+    },
+    {
+      "filename": "integrated-29.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_upsample_tilesync_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-30.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_outview_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 44,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": "boundary256"
+    },
+    {
+      "filename": "integrated-31.cubin",
+      "entry": "cc_tinlayout_fused_swin_4h_128_4_upsample_tilesync_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-32.cubin",
+      "entry": "cc_tinlayout_fused_swin_4h_128_4_outview_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-33.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_upsample_tilesync_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 32,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-34.cubin",
+      "entry": "cc_tinlayout_fused_swin_1h_32_1_upsample_tilesync_fp8",
+      "parameterBytes": 96,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-35.cubin",
+      "entry": "cc_tinlayout_fused_swin_1h_32_1_outview_wait_fp8",
+      "parameterBytes": 96,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-36.cubin",
+      "entry": "cc_vit_1d_attention_chained_fp8",
+      "parameterBytes": 64,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "maxntid",
+      "block": [
+        32,
+        8,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-37.cubin",
+      "entry": "cc_split_swin_16h_proj_pool_512_chained_fp8",
+      "parameterBytes": 80,
+      "registers": 128,
+      "lowering": "async",
+      "copies": 4,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "reqntid",
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-38.cubin",
+      "entry": "cc_tinlayout_fused_swin_8h_256_8_ds_wait_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "maxntid",
+      "block": [
+        32,
+        16,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "integrated-39.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 7,
+        "resolution": "3840x2160",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "0000000000000000"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          }
+        ],
+        "dynamicOffsets": [
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "filename": "integrated-40.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 8,
+        "resolution": "3840x2160",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcffffff00000000"
+          }
+        ],
+        "dynamicOffsets": [
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "filename": "integrated-41.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 7,
+        "resolution": "1920x1080",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "20010000e0010000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "0000000000000000"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "integrated-42.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 8,
+        "resolution": "1920x1080",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "20010000e0010000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcffffff00000000"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "integrated-43.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 7,
+        "resolution": "2560x1440",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "7001000080020000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "0000000000000000"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "integrated-44.cubin",
+      "entry": "cc_tinlayout_fused_swin_2h_64_2_chained_fp8",
+      "parameterBytes": 88,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        2,
+        1
+      ],
+      "pairing": null,
+      "specialization": {
+        "slot": 8,
+        "resolution": "2560x1440",
+        "parameterBytes": 88,
+        "pointerMask": 327,
+        "unusedMask": 1544,
+        "foldedLoads": [
+          {
+            "offset": 32,
+            "bytes": 8,
+            "valueHex": "7001000080020000"
+          },
+          {
+            "offset": 56,
+            "bytes": 8,
+            "valueHex": "fcfffffffcffffff"
+          },
+          {
+            "offset": 40,
+            "bytes": 8,
+            "valueHex": "fcffffff00000000"
+          }
+        ],
+        "dynamicOffsets": []
+      }
+    },
+    {
+      "filename": "frontback-pre.cubin",
+      "entry": "cc_tinlayout_fused_pre_block_swin_1h_32_1_ds_fp8",
+      "parameterBytes": 264,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": false,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    },
+    {
+      "filename": "frontback-post.cubin",
+      "entry": "cc_tinlayout_fused_post_block_swin_1h_32_fp8",
+      "parameterBytes": 184,
+      "registers": 128,
+      "lowering": "retarget",
+      "copies": 0,
+      "reductions": 0,
+      "deferredSharedLoads": 0,
+      "mmaThroughput": false,
+      "sharedSpilling": true,
+      "bound": "reqntid",
+      "block": [
+        32,
+        1,
+        1
+      ],
+      "pairing": null
+    }
+  ]
+}

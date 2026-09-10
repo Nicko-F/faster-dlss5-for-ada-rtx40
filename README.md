@@ -18,6 +18,14 @@
 
 当前 Release 提供源码工具包，完整加速包尚未提供下载。文件区别见[下载指南](docs/downloads.zh-CN.md)。
 
+### 源码与构建
+
+[加速插件源码](src/integration/ada_nr_addon.cpp) · [内核优化代码](tools/optimizations) ·
+[47 个内核配方](config/kernel-recipes.json) · **[本地构建指南](docs/build.zh-CN.md)**
+
+使用本地社区运行库，一条构建命令即可生成完整加速包。已用仓库源码复现全部 47 个内核，
+与保留的加速版本逐字节一致。
+
 ### 优化内容
 
 - **异步搬运**：恢复计算与拷贝的重叠，减少不必要的等待。
@@ -74,6 +82,15 @@ Launch your game as usual. **Check status** shows the last recorded run;
 **Export diagnostics** and **Report a problem** help if something needs attention.
 
 The current Release provides the source/tools archive; the complete acceleration package is not yet downloadable. See the [download guide](docs/downloads.md) for package details.
+
+### Source and build
+
+[Acceleration addon](src/integration/ada_nr_addon.cpp) · [Kernel transformations](tools/optimizations) ·
+[47 kernel recipes](config/kernel-recipes.json) · **[Local build guide](docs/build.md)**
+
+One build command produces a complete acceleration package using your local community
+runtime. All 47 kernels have been reproduced from this source, byte for byte identical
+to the retained acceleration bundle.
 
 ### What we optimize
 

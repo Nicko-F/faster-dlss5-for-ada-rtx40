@@ -5,9 +5,11 @@
 The acceleration package contains the addon, selected GPU kernels and the bilingual
 installer. The community base supplies the NR runtime, model and game integration.
 
-This repository contains our installation tools, API declaration, technical reports
-and measured results. Its source archive does not contain the GPU payload, NVIDIA
-PTX/SASS, runtime DLLs or model weights. Install with the complete acceleration package.
+This repository contains our acceleration addon, 47 kernel recipes, PTX transformation
+tools, dispatch metadata, installer, tests, technical reports and measured results.
+The [local build flow](build.md) uses your community runtime to produce an installable
+acceleration package. The source archive contains no vendor PTX/SASS, runtime DLLs,
+model weights or compiled GPU payload.
 
 Original project files use the MIT license. Third-party components retain their own
 licenses; see [Credits](credits.md). Distribution of the current derived GPU binaries
